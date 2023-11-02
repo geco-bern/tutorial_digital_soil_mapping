@@ -194,7 +194,7 @@ coord_val <-
 
 ```
 
-```{r, eval = TRUE}
+```{r, eval = FALSE}
 #| code-fold: true
 # Notes: 
 # - This code may only work when installing the development branch of {leaflet}:
