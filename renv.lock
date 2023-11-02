@@ -43,14 +43,14 @@
     },
     "KernSmooth": {
       "Package": "KernSmooth",
-      "Version": "2.23-20",
+      "Version": "2.23-21",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R",
         "stats"
       ],
-      "Hash": "8dcfa99b14c296bc9f1fd64d52fd3ce7"
+      "Hash": "6314fc110e09548ba889491db6ae67fb"
     },
     "MASS": {
       "Package": "MASS",
@@ -207,7 +207,7 @@
     },
     "class": {
       "Package": "class",
-      "Version": "7.3-21",
+      "Version": "7.3-22",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -216,7 +216,7 @@
         "stats",
         "utils"
       ],
-      "Hash": "8ae0d4328e2eb3a582dfd5391a3663b7"
+      "Hash": "f91f6b29f38b8c280f2b9477787d4bb2"
     },
     "classInt": {
       "Package": "classInt",
@@ -269,12 +269,19 @@
       ],
       "Hash": "f20c47fd52fae58b4e377c37bb8c335b"
     },
-    "cpp11": {
-      "Package": "cpp11",
-      "Version": "0.4.4",
+    "commonmark": {
+      "Package": "commonmark",
+      "Version": "1.9.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "3f7d8664d7324406cd10cd650ad85e5f"
+      "Hash": "d691c61bff84bd63c383874d2d0c3307"
+    },
+    "cpp11": {
+      "Package": "cpp11",
+      "Version": "0.4.5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "f07821e9b0aada6c999d4692e22a2ea7"
     },
     "crayon": {
       "Package": "crayon",
@@ -479,14 +486,14 @@
     },
     "fs": {
       "Package": "fs",
-      "Version": "1.6.2",
+      "Version": "1.6.3",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R",
         "methods"
       ],
-      "Hash": "94af08e0aa9675a16fadbb3aaaa90d2a"
+      "Hash": "47b5f30c720c23999b913a1a635cf0bb"
     },
     "generics": {
       "Package": "generics",
@@ -716,33 +723,28 @@
     },
     "leaflet": {
       "Package": "leaflet",
-      "Version": "2.1.2.9000",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "leaflet",
-      "RemoteUsername": "rstudio",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "0f8e8315c63b8348c6cc054e1964af48309b576e",
+      "Version": "2.1.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
       "Requirements": [
         "R",
         "RColorBrewer",
+        "base64enc",
         "crosstalk",
         "htmltools",
         "htmlwidgets",
-        "jquerylib",
         "leaflet.providers",
         "magrittr",
+        "markdown",
         "methods",
         "png",
         "raster",
         "scales",
         "sp",
         "stats",
-        "viridis",
-        "xfun"
+        "viridis"
       ],
-      "Hash": "414a7fac23fb14f8627d6a1f49a60c99"
+      "Hash": "ac2c7f21c2a6d2579eed8aaae4c42610"
     },
     "leaflet.providers": {
       "Package": "leaflet.providers",
@@ -788,6 +790,19 @@
         "utils"
       ],
       "Hash": "644a88fb036ab50cee0b715394eefa1a"
+    },
+    "markdown": {
+      "Package": "markdown",
+      "Version": "1.7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "commonmark",
+        "utils",
+        "xfun"
+      ],
+      "Hash": "0ffaea87c070a56d140ce00b0727b278"
     },
     "memoise": {
       "Package": "memoise",
@@ -1019,7 +1034,7 @@
     },
     "rmarkdown": {
       "Package": "rmarkdown",
-      "Version": "2.24",
+      "Version": "2.23",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1039,7 +1054,7 @@
         "xfun",
         "yaml"
       ],
-      "Hash": "3854c37590717c08c32ec8542a2e0a35"
+      "Hash": "79f14e53725f28900d936f692bfdd69f"
     },
     "rprojroot": {
       "Package": "rprojroot",
@@ -1065,7 +1080,7 @@
     },
     "sass": {
       "Package": "sass",
-      "Version": "0.4.6",
+      "Version": "0.4.7",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1075,7 +1090,7 @@
         "rappdirs",
         "rlang"
       ],
-      "Hash": "cc3ec7dd33982ef56570229b62d6388e"
+      "Hash": "6bd4d33b50ff927191ec9acbf52fd056"
     },
     "scales": {
       "Package": "scales",
@@ -1345,7 +1360,7 @@
     },
     "viridis": {
       "Package": "viridis",
-      "Version": "0.6.3",
+      "Version": "0.6.4",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1354,7 +1369,7 @@
         "gridExtra",
         "viridisLite"
       ],
-      "Hash": "0d774f552202add033efc43a30293b3f"
+      "Hash": "80cd127bc8c9d3d9f0904ead9a9102f1"
     },
     "viridisLite": {
       "Package": "viridisLite",

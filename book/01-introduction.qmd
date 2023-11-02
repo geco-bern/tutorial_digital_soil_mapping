@@ -14,7 +14,7 @@ This tutorial builds on the course [Applied Geodata Science I](https://geco-bern
 
 Spatial data science combines geography, statistics, computer science, and data science to analyze and interpret spatially referenced data. It focuses on uncovering patterns and relationships in geospatial data to gain insights into spatial phenomena. By integrating locational information, spatial data science provides a deeper understanding of complex spatial patterns and processes. There are three key aspects of spatial data science that allow such a deeper understanding:
 
--   Spatial Data Visualization: Visualizing spatial data through maps and interactive visualizations helps communicate complex spatial information effectively.
+-   Spatial Data Visualization: Visualizing spatial data through maps and interactive visualizations helps communicate complex spatial information effectively. A brief introduction to working with geospatial data in R is given [here](https://geco-bern.github.io/handfull_of_pixels/geospatial_R.html). 
 
 -   Spatial Data Analysis: Techniques such as spatial clustering, spatial autocorrelation analysis, and spatial regression reveal spatial patterns, trends, and dependencies.
 
