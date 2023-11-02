@@ -4,7 +4,7 @@ project:
 
 book:
   title: "AGDS 2: Digital Soil Mapping"
-  subtitle: "Predicting soil properties from spatial data"
+  subtitle: "Predicting soil properties from geospatial data"
   author: "Pascal Schneider"
   date: "6/29/2023"
   page-navigation: true

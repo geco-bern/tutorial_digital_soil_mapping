@@ -92,6 +92,8 @@ terra::plot(raster_example)
 ```
 
 ```{r}
+library(tidyterra)
+
 # To have some more flexibility, we can plot this in the ggplot-style as such:
 ggplot2::ggplot() +
   tidyterra::geom_spatraster(data = raster_example) +
