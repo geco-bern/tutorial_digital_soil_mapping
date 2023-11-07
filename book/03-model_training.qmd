@@ -1,8 +1,10 @@
 # Train a Random Forest {#sec-modelfit}
 
+In this chapter, we are going to use the data prepared in @sec-dataprep, train a Random Forest model, and evaluate the variable importance of the different predictors used in the model. To recap the basics of the Random Forest algorithm and its implementation and use in R, head over to [Chapter 11 of AGDS book](https://geco-bern.github.io/agds/randomforest.html).
+
 ## Load data
 
-In the previous Chapter, we create a dataframe that holds information on the soil sampling locations and the covariates that we extracted for these positions. Let's load this datafarme into our environment
+In the previous Chapter, we created a dataframe that holds information on the soil sampling locations and the covariates that we extracted for these positions. Let's load this datafarme into our environment
 
 ```{r}
 data_clean <- readRDS(here::here("data/bern_sampling_locations_with_covariates.rds"))
@@ -52,15 +54,15 @@ cat("For model training, we have a calibration / validation split of: ",
     perc_cal, "/", perc_val, "%")
 ```
 
-Alright, this looks all good. We have our response and predictor variables saved for easy access later on and the 75/25 split of calibration and validation data looks good too. We can now move on to model fitting!
+Alright, this looks all good. We have our response and predictor variables saved for easy access later on and the 75/25% split of calibration and validation data looks good, too. We can now move on to model fitting.
 
 ## Model training
 
-To fit a Random Forest model that predicts the soil pH in the top 10cm, we are looking at different model setups. These setups always train a Random Forest model but differ in the complexity that we intentionally add to improve the final model. If you need a recap on Random Forests, have a look at the introduction given in AGDS 1.
+The modelling task is to predict the soil pH in the top 10 cm. Let's start using the default hyperparameters used by `ranger::ranger()`.
 
-### Basic model
-
-Let's start with the basic model, where we use the {ranger} package with the pre-defined hyperparameters.
+::: callout-tip
+Have a look at the values of the defaults by entering. `?ranger::ranger` in your console and study the function documentation. 
+:::
 
 ```{r}
 # ranger() crashes when using tibbles, so we are using the
@@ -84,47 +86,49 @@ If our response variable was a categorical and not a continuous variable, we wou
 
 Although we only used the pre-defined parameters, we already get a fairly good out-of-bag (OOB) $R^2$ of 0.53 and a MSE of 0.28. Let's see how we can improve our model further.
 
-### Model with weights
+<!-- ### Model with weights -->
 
-Sometimes we know that a subset of our dataset is more trustworthy than the rest. For example, when you are using a gap-filling technique to interpolate data, that gap-filled data is less trustworthy than the actually measured data. Informing the model algorithm that it should weigh certain data entries more than other can change the importance of variables and the final model performance.
+<!-- Sometimes we know that a subset of our dataset is more trustworthy than the rest. For example, when you are using a gap-filling technique to interpolate data, that gap-filled data is less trustworthy than the actually measured data. Informing the model algorithm that it should weigh certain data entries more than others can affect the final model performance. -->
 
-In our dataset, we have information on whether the pH values were measured in the field - which is less precise - or in the lab. Also, we have to different lab methods. All of this information is held in the suffix of the `timeset` variable, so let's assign weights according on the quality of the pH data as follows: `1` for CaCl$_2$ lab measurement (no suffix), `0.9` for pedotransfer from another lab method (suffix `_ptf`), and `0.7` for field data (suffix `_field`). For this, we create a weight-matching vector:
+<!-- In our dataset, we have information on whether the pH values were measured in the field - which is less precise - or in the lab. Also, two different lab methods are indicated in the data. All of this information is held in the suffix of the `timeset` variable, so let's assign weights according on the quality of the pH data as follows: `1` for CaCl$_2$ lab measurement (no suffix), `0.9` for pedotransfer from another lab method (suffix `_ptf`), and `0.7` for field data (suffix `_field`). For this, we create a weight-matching vector: -->
 
-```{r}
-weights <- 
-  data_cal |>
-  dplyr::mutate(
-    # Create a new variable 'weight' which holds only 1's
-    w = 1,
-    # Check the suffix in each row and if true, give a new weight. If false, keep the old weight.
-    w = ifelse(stringr::str_detect(timeset, "_field"), 0.9, w),
-    w = ifelse(stringr::str_detect(timeset, "_ptf"), 0.7, w)
-  )
+<!-- ```{r} -->
+<!-- weights <-  -->
+<!--   data_cal |> -->
+<!--   dplyr::mutate( -->
+<!--     # Create a new variable 'weight' which holds only 1's -->
+<!--     w = 1, -->
+<!--     # Check the suffix in each row and if true, give a new weight. If false, keep the old weight. -->
+<!--     w = ifelse(stringr::str_detect(timeset, "_field"), 0.9, w), -->
+<!--     w = ifelse(stringr::str_detect(timeset, "_ptf"), 0.7, w) -->
+<!--   ) -->
 
-# Quality check if everything worked:
-set.seed(42)
+<!-- # Quality check if everything worked: -->
+<!-- set.seed(42) -->
 
-weights |> 
-  dplyr::select(timeset, w) |> 
-  dplyr::slice_sample(n = 8) |>   # Pick 8 random rows
-  knitr::kable()
-```
+<!-- weights |>  -->
+<!--   dplyr::select(timeset, w) |>  -->
+<!--   dplyr::slice_sample(n = 8) |>   # Pick 8 random rows -->
+<!--   knitr::kable() -->
+<!-- ``` -->
 
-It is always a good idea to do quality checks when wrangling! Here we see that our weight attribution code worked as expected, so we can move on to model fitting.
+<!-- It is always a good idea to do quality checks when wrangling! Here we see that our weight attribution code worked as expected, so we can move on to model fitting. -->
 
-```{r}
-rf_weighted <- ranger::ranger( 
-  y = data_cal[, response],      # Response variable
-  x = data_cal[, predictors],    # Predictor variables
-  case.weights = weights[, "w"], # Add weights to input
-  seed = 42,                     # Specify seed for randomization to reproduce the same model again
-  num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training
+<!-- ```{r} -->
+<!-- rf_weighted <- ranger::ranger(  -->
+<!--   y = data_cal[, response],      # Response variable -->
+<!--   x = data_cal[, predictors],    # Predictor variables -->
+<!--   case.weights = weights[, "w"], # Add weights to input -->
+<!--   seed = 42,                     # Specify seed for randomization to reproduce the same model again -->
+<!--   num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training -->
 
-# Print a summary of fitted model
-rf_weighted |> print()
-```
+<!-- # Print a summary of fitted model -->
+<!-- rf_weighted |> print() -->
+<!-- ``` -->
 
-Not much has changed compared to our previous model. We see that the $R^2$ and MSE got negligibly worse but as a trade-off we gained more trust in our model.
+<!-- Not much has changed compared to our previous model. We see that the $R^2$ and MSE got negligibly worse but as a trade-off we gained more trust in our model. -->
+
+This is the step at which you may want to optimize the hyperparameters for improving the model performance and generalisability. You may want to compare  different hyperparameter specifications of the Random Forest model that control the model complexity. A simple way to do that is to use the {caret} R package which provides machine learning wrapper functions for hyperparameter tuning (among many more functionalities). Its use in combination with Random Forest is demonstrated in [Chapter 11 of AGDS book](https://geco-bern.github.io/agds/randomforest.html).
 
 ## Model interpretation
 
@@ -135,24 +139,23 @@ Our model has 98 variables but we have no idea if each of them should really be 
 Assessing the variable importance gives us a feeling for what variables we should keep or drop from the dataset. The ranger-model stores this information if we enter a `importance` method. The code below accesses the model's variable importance and sorts the variables with decreasing importance.
 
 ```{r fig.height=6, fig.width=12}
-# Let's run the weighted model again but with recording the variable importance
-rf_weighted <- ranger::ranger( 
+# Let's run the basic model again but with recording the variable importance
+rf_basic <- ranger::ranger( 
   y = data_cal[, response],     # Response variable
   x = data_cal[, predictors],   # Predictor variables
-  case.weights = weights[, "w"],# Add weights to input
   importance   = "permutation", # Pick permutation to calculate variable importance
   seed = 42,                    # Specify seed for randomization to reproduce the same model again
   num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training
 
 # Extract the variable importance and create a long tibble
-vi_rf_weighted <- 
-  rf_weighted$variable.importance |>
+vi_rf_basic <- 
+  rf_basic$variable.importance |>
   dplyr::bind_rows() |> 
   tidyr::pivot_longer(cols = dplyr::everything(), names_to = "variable")
 
 # Plot variable importance, ordered by decreasing value
 p <- 
-  vi_rf_weighted |> 
+  vi_rf_basic |> 
   ggplot2::ggplot(ggplot2::aes(x = reorder(variable, value), y = value)) +
   ggplot2::geom_bar(stat = "identity", fill = "grey50", width = 0.75) + 
   ggplot2::labs(
@@ -203,7 +206,7 @@ bor_top10 <-
   dplyr::pull(rowname)
 
 vi_top10 <- 
-  vi_rf_weighted |> 
+  vi_rf_basic |> 
   dplyr::slice_head(n = 10) |> 
   dplyr::pull(variable)
 
