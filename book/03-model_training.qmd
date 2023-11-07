@@ -14,22 +14,18 @@ head(data_clean) |> knitr::kable()
 
 ## Preparations
 
-Before we can fit the model, we have to specify a few settings. First, we have to specify our response and predictor variables. Then, we have to split our dataset into a calibration and a validation set. Random Forest models cannot deal with `NA` values, so we have to remove these from our calibration set.
+Before we can fit the model, we have to specify a few settings. First, we have to specify our response and predictor variables. Then, we have to split our dataset into a calibration and a validation set. Random Forest models cannot deal with `NA` values, so we have to remove these from our calibration set. 
+
+In the dataset we work with here, the data splitting into training and testing sets is defined by the column `dataset`. Usually, this is not the case and we split the data ourselves. Have a look at the [section in AGDS Book on data splitting](https://geco-bern.github.io/agds/supervisedmli.html#data-splitting).
+
+As predictors we use all the variables for which we have data with spatial coverage - the basis for spatial upscaling. We extracted these data in @sec-dataprep from geospatial files and the data frame was constructed by `cbind()`, where columns number 14-28 contain the covariates data, extracted from the geospatial files. We use these here as predictors for the model.
 
 ```{r}
 # Specify response: The pH in the top 10cm
 response <- "ph.0.10"
 
 # Specify predictors: Remove soil sampling information
-predictors <- 
-  data_clean |> 
-  dplyr::select(-response,                             # Remove response variable
-                -site_id_unique,                       # Remove site ID
-                -tidyr::starts_with("ph"),             # No pH information
-                -tidyr::starts_with("waterlog"),       # No water-status information
-                -dclass,                               # No water-status information
-                -dataset) |>                           # No calib./valid information
-  names()
+predictors <- names(data_clean)[14:28]
 
 cat("The response is:", response,
     "\nThe predictors are:", paste0(predictors[1:8], sep = ", "), "...")
@@ -84,7 +80,7 @@ rf_basic |> print()
 If our response variable was a categorical and not a continuous variable, we would have to set the argument `probability = TRUE`. The output would then be a probability map from 0-100%.
 :::
 
-Although we only used the pre-defined parameters, we already get a fairly good out-of-bag (OOB) $R^2$ of 0.53 and a MSE of 0.28. Let's see how we can improve our model further.
+Although we only used the pre-defined parameters, we already get a fairly good out-of-bag (OOB) $R^2$ of 0.41 and a MSE of 0.35 pH units. 
 
 <!-- ### Model with weights -->
 
@@ -134,7 +130,7 @@ This is the step at which you may want to optimize the hyperparameters for impro
 
 ### Variable importance based on OOB-Error
 
-Our model has 98 variables but we have no idea if each of them should really be in the model and if we are not just fitting noise in the dataset. To investigate this issue, the `ranger()` function takes an argument called `importance`. We can set this argument either to follow the `permutation` method, whereby the algorithm randomly permutes values of each variable and measures the resulting decrease in model accuracy. A larger decrease indicates a more important variable. If the code runs slow, you can also use the faster `impurity` method (see more information [here](https://bmcbioinformatics.biomedcentral.com/counter/pdf/10.1186/s12859-016-0995-8.pdf)).
+Our model has 15 variables, but we have no idea if each of them should really be in the model and if we are not just fitting noise in the dataset. To investigate this issue, the `ranger()` function takes an argument called `importance`. We can set this argument either to follow the `permutation` method, whereby the algorithm randomly permutes values of each variable and measures the resulting decrease in model accuracy. A larger decrease indicates a more important variable. If the code runs slow, you can also use the faster `impurity` method (see more information [here](https://bmcbioinformatics.biomedcentral.com/counter/pdf/10.1186/s12859-016-0995-8.pdf)).
 
 Assessing the variable importance gives us a feeling for what variables we should keep or drop from the dataset. The ranger-model stores this information if we enter a `importance` method. The code below accesses the model's variable importance and sorts the variables with decreasing importance.
 
