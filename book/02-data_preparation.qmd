@@ -51,13 +51,13 @@ list_raster <-
     full.names = TRUE
   )
 
-# Take a random subset
-set.seed(3)
-list_raster_subset <- list_raster |> sample(15)
+# # Take a random subset
+# set.seed(3)
+# list_raster <- list_raster |> sample(15)
 
 # Display data (lapply to clean names)
 lapply(
-  list_raster_subset, 
+  list_raster, 
   function(x) sub(".*/(.*)", "\\1", x)
   ) |> 
   unlist() |> 
@@ -259,14 +259,14 @@ That looks great! At a first glance, it is a bit crowded but once you zoom in, y
 
 ## Combine data
 
-Now that we have played with a few visualizations, let's get back to preparing our data. The {terra} package comes with the very useful tool to stack multiple rasters on top of each other if they share the spatial grid (extent and resolution). To do so, we just have to feed in the vector of file names `list_raster_subset`:
+Now that we have played with a few visualizations, let's get back to preparing our data. The {terra} package comes with the very useful tool to stack multiple rasters on top of each other if they share the spatial grid (extent and resolution). To do so, we just have to feed in the vector of file names `list_raster`:
 
 ```{r}
 # Load all files as one batch
-all_rasters <- terra::rast(list_raster_subset)
+all_rasters <- terra::rast(list_raster)
 all_rasters
 ```
-Note that above, we have stacked only a random of all available raster data (`list_raster_subset`) which we have generated previously.
+Note that above, we have stacked only a random of all available raster data (`list_raster`) which we have generated previously.
 
 Now, we do not want to have the covariates' data from all cells in the raster file. Rather, we want to reduce our stacked rasters to the x and y coordinates for which we have soil sampling data. We can do this using the `terra::extract()` function. Then, we want to merge the two dataframes of soil data and covariates data by their coordinates. Since number of rows and the order of the covariate data is the same as the "Bern data" (soil samples), we can simply bind their columns with `cbind()`:
 
@@ -374,7 +374,9 @@ final_data |>
 This looks good, we have no variable with a substantial amount of missing data. Generally, only pH measurements are lacking, which we should keep in mind when making predictions and inferences. Another great way to explore your data, is using the {visdat} package:
 
 ```{r}
-final_data |> visdat::vis_miss()
+final_data |> 
+  dplyr::select(1:20) |>   # reduce data for readability of the plot
+  visdat::vis_miss()
 ```
 
 Alright, we see that we are not missing any data in the covariate data. Mostly sampled data, specifically pH and timeset data is missing. We also see that this missing data is mostly from the same entries, so if we keep only entries where we have pH data - which is what we are interested in here - we have a dataset with pracitally no missing data.
