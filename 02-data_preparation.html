@@ -219,7 +219,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./99-exercise.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Exercise</span></span></a>
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Report Exercise</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -291,12 +291,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <details open="">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load soil data from sampling locations</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>bern_data <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>df_obs <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data-raw/soildata/berne_soil_sampling_locations.csv"</span>)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Display data</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(bern_data) <span class="sc">|&gt;</span> knitr<span class="sc">::</span><span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_obs) <span class="sc">|&gt;</span> </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <table class="table table-sm table-striped small">
@@ -433,7 +434,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p><code>timeset</code>: The sampling year and information on sampling type for soil pH (no label: CaCl<span class="math inline">\(_2\)</span> laboratory measurement, field: indicator solution used in field, ptf: H<span class="math inline">\(_2\)</span>O laboratory measurement transferred by pedotransfer function).</p></li>
 <li><p><code>x</code>: The x (easting) coordinates in meters following the (CH1903/LV03) system.</p></li>
 <li><p><code>y</code>: The y (northing) coordinates in meters following the (CH1903/LV03) system.</p></li>
-<li><p><code>dataset</code>: Specification whether a sample is used for model calibration or validation (this is based on randomization to ensure even spatial coverage).</p></li>
+<li><p><code>dataset</code>: Specification whether a sample is used for model training (<code>"calibration"</code>) or testing (<code>"validation"</code>) (this is based on randomization to ensure even spatial coverage).</p></li>
 <li><p><code>dclass</code>: Soil drainage class</p></li>
 <li><p><code>waterlog.30</code>, <code>waterlog.50</code>, <code>waterlog.100</code>: Specification whether soil was water logged at 30, 50, or 100 cm depth (0 = No, 1 = Yes).</p></li>
 <li><p><code>ph.0.10</code>, <code>ph.10.30</code>, <code>ph.30.50</code>, <code>ph.50.100</code>: Average soil pH between 0-10, 10-30, 30-50, and 50-100 cm depth.</p></li>
@@ -446,29 +447,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <details open="">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get a list with the path to all raster files</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>list_raster <span class="ot">&lt;-</span> </span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list.files</span>(</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data-raw/geodata/covariates/"</span>),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">full.names =</span> <span class="cn">TRUE</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Take a random subset</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">3</span>)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>list_raster_subset <span class="ot">&lt;-</span> list_raster <span class="sc">|&gt;</span> <span class="fu">sample</span>(<span class="dv">15</span>)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Display data (lapply to clean names)</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  list_raster_subset, </span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) <span class="fu">sub</span>(<span class="st">".*/(.*)"</span>, <span class="st">"</span><span class="sc">\\</span><span class="st">1"</span>, x)</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unlist</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">5</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>list_raster <span class="ot">&lt;-</span> <span class="fu">list.files</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data-raw/geodata/covariates/"</span>),</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">full.names =</span> <span class="cn">TRUE</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Display data (lapply to clean names)</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  list_raster, </span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) <span class="fu">sub</span>(<span class="st">".*/(.*)"</span>, <span class="st">"</span><span class="sc">\\</span><span class="st">1"</span>, x)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unlist</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">5</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "geo500h1id.tif"           "Se_n_aspect2m.tif"       
-[3] "mt_rr_y.tif"              "Se_curvplan2m_std_5c.tif"
-[5] "vdcn25.tif"              </code></pre>
+<pre><code>[1] "NegO.tif"         "PosO.tif"         "Se_MRRTF2m.tif"   "Se_MRVBF2m.tif"  
+[5] "Se_NO2m_r500.tif"</code></pre>
 </div>
 </div>
 <p>The output above shows the first five raster files with rather cryptic names. The meaning of all 91 raster files are given in <a href="99-variables.html"><span>Chapter&nbsp;6</span></a>. Make sure to have a look at that list as it will help you to interpret your model results later on. Let’s look at one of these raster files, <code>Se_slope2m.tif</code>, to get a better understanding for our data. That file contains the local slope of the terrain, derived from a digital elevation model with 2 m resolution:</p>
@@ -569,7 +564,7 @@ Tip
 <p>Note that the second plot has different coordinates than the upper one. That is because the data was automatically projected to the World Geodetic System (WGS84, ESPG: 4326).</p>
 </div>
 </div>
-<p>This looks already interesting but we can put our data into a bit more context. For example, a larger map background would be useful to get a better orientation of our location. Also, it would be nice to see where our sampling locations are and to differentiate these locations by whether they are part of the calibration or validation dataset. Bringing this all together requires some more understanding of plotting maps in <code>R</code>. So, don’t worry if you do not understand everything in the code chunk below and enjoy the visualizations:</p>
+<p>This looks already interesting but we can put our data into a bit more context. For example, a larger map background would be useful to get a better orientation of our location. Also, it would be nice to see where our sampling locations are and to differentiate these locations by whether they are part of the training or testing dataset. Bringing this all together requires some more understanding of plotting maps in <code>R</code>. So, don’t worry if you do not understand everything in the code chunk below and enjoy the visualizations:</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -582,7 +577,7 @@ Tip
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Swiss CH1903+ / LV95: 2056</span></span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># For the raster:</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>r <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">project</span>(raster_example, <span class="st">"+init=EPSG:4326"</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>rasta <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">project</span>(raster_example, <span class="st">"+init=EPSG:4326"</span>)</span>
 <span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Let's make a function for transforming the sampling locations:</span></span>
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>change_coords <span class="ot">&lt;-</span> <span class="cf">function</span>(data, from_CRS, to_CRS) {</span>
@@ -607,25 +602,23 @@ Tip
 <span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Transform dataframes</span></span>
-<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>coord_cal <span class="ot">&lt;-</span> </span>
-<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>  bern_data <span class="sc">|&gt;</span> </span>
-<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(dataset <span class="sc">==</span> <span class="st">"calibration"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id_unique, x, y) <span class="sc">|&gt;</span> </span>
-<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">rename</span>(<span class="at">id =</span> site_id_unique, <span class="at">lon =</span> x, <span class="at">lat =</span> y) <span class="sc">|&gt;</span> </span>
-<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">change_coords</span>(</span>
-<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">from_CRS =</span> <span class="dv">2056</span>, </span>
-<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>    <span class="at">to_CRS =</span> <span class="dv">4326</span></span>
-<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>coord_val <span class="ot">&lt;-</span> </span>
-<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>  bern_data <span class="sc">|&gt;</span> </span>
-<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(dataset <span class="sc">==</span> <span class="st">"validation"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id_unique, x, y) <span class="sc">|&gt;</span> </span>
-<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">rename</span>(<span class="at">id =</span> site_id_unique, <span class="at">lon =</span> x, <span class="at">lat =</span> y) <span class="sc">|&gt;</span> </span>
-<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">change_coords</span>(</span>
-<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">from_CRS =</span> <span class="dv">2056</span>, </span>
-<span id="cb8-52"><a href="#cb8-52" aria-hidden="true" tabindex="-1"></a>    <span class="at">to_CRS =</span> <span class="dv">4326</span></span>
-<span id="cb8-53"><a href="#cb8-53" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>coord_train <span class="ot">&lt;-</span> df_obs <span class="sc">|&gt;</span> </span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(dataset <span class="sc">==</span> <span class="st">"calibration"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id_unique, x, y) <span class="sc">|&gt;</span> </span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">rename</span>(<span class="at">id =</span> site_id_unique, <span class="at">lon =</span> x, <span class="at">lat =</span> y) <span class="sc">|&gt;</span> </span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">change_coords</span>(</span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">from_CRS =</span> <span class="dv">2056</span>, </span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">to_CRS =</span> <span class="dv">4326</span></span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>coord_test <span class="ot">&lt;-</span> df_obs <span class="sc">|&gt;</span> </span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(dataset <span class="sc">==</span> <span class="st">"validation"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(site_id_unique, x, y) <span class="sc">|&gt;</span> </span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">rename</span>(<span class="at">id =</span> site_id_unique, <span class="at">lon =</span> x, <span class="at">lat =</span> y) <span class="sc">|&gt;</span> </span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">change_coords</span>(</span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">from_CRS =</span> <span class="dv">2056</span>, </span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a>    <span class="at">to_CRS =</span> <span class="dv">4326</span></span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>    )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <div class="cell">
@@ -651,21 +644,21 @@ Tip
 <span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  leaflet<span class="sc">::</span><span class="fu">addProviderTiles</span>(leaflet<span class="sc">::</span>providers<span class="sc">$</span>Esri.WorldTopoMap, <span class="at">group =</span> <span class="st">"World Topo"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add our raster file</span></span>
 <span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  leaflet<span class="sc">::</span><span class="fu">addRasterImage</span>(</span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    r,</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    rasta,</span>
 <span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">colors =</span> pal,</span>
 <span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">opacity =</span> <span class="fl">0.6</span>,</span>
 <span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">group =</span> <span class="st">"raster"</span></span>
 <span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
 <span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add markers for sampling locations</span></span>
 <span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>  leaflet<span class="sc">::</span><span class="fu">addCircleMarkers</span>(</span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> coord_cal,</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> coord_train,</span>
 <span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">lng =</span> <span class="sc">~</span>lon,  <span class="co"># Column name for x coordinates</span></span>
 <span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">lat =</span> <span class="sc">~</span>lat,  <span class="co"># Column name for y coordinates</span></span>
 <span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">group =</span> <span class="st">"training"</span>,</span>
 <span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"black"</span></span>
 <span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
 <span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>    leaflet<span class="sc">::</span><span class="fu">addCircleMarkers</span>(</span>
-<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> coord_val,</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> coord_test,</span>
 <span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">lng =</span> <span class="sc">~</span>lon,  <span class="co"># Column name for x coordinates</span></span>
 <span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">lat =</span> <span class="sc">~</span>lat,  <span class="co"># Column name for y coordinates</span></span>
 <span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">group =</span> <span class="st">"validation"</span>,</span>
@@ -697,82 +690,160 @@ Note
 <p>This plotting example is based to the one shown in the AGDS 2 tutorial “Handful of Pixels” on phenology. More information on using spatial data in R can be found there in the Chapter on <a href="https://geco-bern.github.io/handfull_of_pixels/geospatial_R.html">Geospatial data in R</a>.</p>
 </div>
 </div>
-<p>That looks great! At a first glance, it is a bit crowded but once you zoom in, you can investigate our study area quite nicely. You can check whether the slope raster file makes sense by comparing it against the base maps. Can you see how cliffs along the Aare river, hills, and even gravel quarries show high slope values. We also see that our validation dataset is randomly distributed across the area covered by the training dataset.</p>
+<p>That looks great! At a first glance, it is a bit crowded but once you zoom in, you can investigate our study area quite nicely. You can check whether the slope raster file makes sense by comparing it against the base maps. Can you see how cliffs along the Aare river, hills, and even gravel quarries show high slope values. We also see that our testing dataset is randomly distributed across the area covered by the training dataset.</p>
 </section>
 <section id="combine-data" class="level2" data-number="2.3">
 <h2 data-number="2.3" class="anchored" data-anchor-id="combine-data"><span class="header-section-number">2.3</span> Combine data</h2>
-<p>Now that we have played with a few visualizations, let’s get back to preparing our data. The {terra} package comes with the very useful tool to stack multiple rasters on top of each other if they share the spatial grid (extent and resolution). To do so, we just have to feed in the vector of file names <code>list_raster_subset</code>:</p>
+<p>Now that we have played with a few visualizations, let’s get back to preparing our data. The {terra} package comes with the very useful tool to stack multiple rasters on top of each other if they share the spatial grid (extent and resolution). To do so, we just have to feed in the vector of file names <code>list_raster</code>:</p>
 <div class="cell">
 <details open="">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load all files as one batch</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>all_rasters <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(list_raster_subset)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>all_rasters <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(list_raster)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>all_rasters</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>class       : SpatRaster 
-dimensions  : 986, 2428, 15  (nrow, ncol, nlyr)
+dimensions  : 986, 2428, 91  (nrow, ncol, nlyr)
 resolution  : 20, 20  (x, y)
 extent      : 2568140, 2616700, 1200740, 1220460  (xmin, xmax, ymin, ymax)
 coord. ref. : CH1903+ / LV95 
-sources     : geo500h1id.tif  
-              Se_n_aspect2m.tif  
-              mt_rr_y.tif  
-              ... and 12 more source(s)
-names       : geo500h1id, Se_n_~ect2m, mt_rr_y, Se_cu~td_5c,   vdcn25,      lsf, ... 
-min values  :          1,          -1,  9804.2,      0.0000,   0.0000,   0.0650, ... 
-max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634, ... </code></pre>
+sources     : NegO.tif  
+              PosO.tif  
+              Se_MRRTF2m.tif  
+              ... and 88 more source(s)
+names       :      NegO,      PosO, Se_MRRTF2m, Se_MRVBF2m, Se_NO2m_r500, Se_PO2m_r500, ... 
+min values  : 0.8109335, 0.8742412,   0.000000,   0.000000,    0.2755551,    0.3541574, ... 
+max values  : 1.5921584, 1.6218545,   6.965698,   7.991423,    1.6376855,    1.6430260, ... </code></pre>
 </div>
 </div>
-<p>Note that above, we have stacked only a random of all available raster data (<code>list_raster_subset</code>) which we have generated previously.</p>
+<p>Note that above, we have stacked only a random of all available raster data (<code>list_raster</code>) which we have generated previously.</p>
 <p>Now, we do not want to have the covariates’ data from all cells in the raster file. Rather, we want to reduce our stacked rasters to the x and y coordinates for which we have soil sampling data. We can do this using the <code>terra::extract()</code> function. Then, we want to merge the two dataframes of soil data and covariates data by their coordinates. Since number of rows and the order of the covariate data is the same as the “Bern data” (soil samples), we can simply bind their columns with <code>cbind()</code>:</p>
 <div class="cell">
 <details open="">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract coordinates from sampling locations</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>sampling_xy <span class="ot">&lt;-</span> bern_data <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">select</span>(x, y)</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># From all rasters, extract values for sampling coordinates</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>covar_data <span class="ot">&lt;-</span> </span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  terra<span class="sc">::</span><span class="fu">extract</span>(all_rasters,  <span class="co"># The raster we want to extract from</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>                 sampling_xy,  <span class="co"># A matrix of x and y values to extract for</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>                 <span class="at">ID =</span> <span class="cn">FALSE</span>    <span class="co"># To not add a default ID column to the output</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>                 )</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>final_data <span class="ot">&lt;-</span> <span class="fu">cbind</span>(bern_data, covar_data)</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final_data) <span class="sc">|&gt;</span> knitr<span class="sc">::</span><span class="fu">kable</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>sampling_xy <span class="ot">&lt;-</span> df_obs <span class="sc">|&gt;</span> </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(x, y)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co"># From all rasters, extract values for sampling coordinates</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>df_covars <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">extract</span>(</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  all_rasters,  <span class="co"># The raster we want to extract from</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  sampling_xy,  <span class="co"># A matrix of x and y values to extract for</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">ID =</span> <span class="cn">FALSE</span>    <span class="co"># To not add a default ID column to the output</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>df_full <span class="ot">&lt;-</span> <span class="fu">cbind</span>(df_obs, df_covars)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_full) <span class="sc">|&gt;</span> </span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>() </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 4%">
-<col style="width: 4%">
-<col style="width: 2%">
-<col style="width: 2%">
-<col style="width: 3%">
-<col style="width: 2%">
-<col style="width: 3%">
-<col style="width: 3%">
-<col style="width: 3%">
-<col style="width: 2%">
-<col style="width: 2%">
-<col style="width: 2%">
-<col style="width: 3%">
-<col style="width: 3%">
-<col style="width: 4%">
-<col style="width: 2%">
-<col style="width: 6%">
-<col style="width: 2%">
-<col style="width: 3%">
-<col style="width: 3%">
-<col style="width: 3%">
-<col style="width: 3%">
-<col style="width: 7%">
-<col style="width: 4%">
-<col style="width: 3%">
-<col style="width: 4%">
-<col style="width: 2%">
-<col style="width: 3%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
+<col style="width: 0%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -789,21 +860,97 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <th style="text-align: right;">ph.10.30</th>
 <th style="text-align: right;">ph.30.50</th>
 <th style="text-align: right;">ph.50.100</th>
-<th style="text-align: right;">geo500h1id</th>
-<th style="text-align: right;">Se_n_aspect2m</th>
-<th style="text-align: right;">mt_rr_y</th>
-<th style="text-align: right;">Se_curvplan2m_std_5c</th>
-<th style="text-align: right;">vdcn25</th>
-<th style="text-align: right;">lsf</th>
-<th style="text-align: right;">Se_conv2m</th>
-<th style="text-align: right;">Se_slope2m</th>
+<th style="text-align: right;">NegO</th>
+<th style="text-align: right;">PosO</th>
+<th style="text-align: right;">Se_MRRTF2m</th>
 <th style="text-align: right;">Se_MRVBF2m</th>
-<th style="text-align: right;">Se_curvprof2m_fmean_50c</th>
-<th style="text-align: right;">Se_diss2m_50c</th>
-<th style="text-align: right;">Se_vrm2m</th>
-<th style="text-align: right;">Se_curvplan2m</th>
+<th style="text-align: right;">Se_NO2m_r500</th>
+<th style="text-align: right;">Se_PO2m_r500</th>
 <th style="text-align: right;">Se_SAR2m</th>
+<th style="text-align: right;">Se_SCA2m</th>
+<th style="text-align: right;">Se_TWI2m</th>
+<th style="text-align: right;">Se_TWI2m_s15</th>
+<th style="text-align: right;">Se_TWI2m_s60</th>
+<th style="text-align: right;">Se_alti2m_std_50c</th>
+<th style="text-align: right;">Se_conv2m</th>
+<th style="text-align: right;">Se_curv25m</th>
+<th style="text-align: right;">Se_curv2m</th>
+<th style="text-align: right;">Se_curv2m_fmean_50c</th>
+<th style="text-align: right;">Se_curv2m_fmean_5c</th>
+<th style="text-align: right;">Se_curv2m_s60</th>
+<th style="text-align: right;">Se_curv2m_std_50c</th>
+<th style="text-align: right;">Se_curv2m_std_5c</th>
+<th style="text-align: right;">Se_curv50m</th>
 <th style="text-align: right;">Se_curv6m</th>
+<th style="text-align: right;">Se_curvplan25m</th>
+<th style="text-align: right;">Se_curvplan2m</th>
+<th style="text-align: right;">Se_curvplan2m_fmean_50c</th>
+<th style="text-align: right;">Se_curvplan2m_fmean_5c</th>
+<th style="text-align: right;">Se_curvplan2m_s60</th>
+<th style="text-align: right;">Se_curvplan2m_s7</th>
+<th style="text-align: right;">Se_curvplan2m_std_50c</th>
+<th style="text-align: right;">Se_curvplan2m_std_5c</th>
+<th style="text-align: right;">Se_curvplan50m</th>
+<th style="text-align: right;">Se_curvprof25m</th>
+<th style="text-align: right;">Se_curvprof2m</th>
+<th style="text-align: right;">Se_curvprof2m_fmean_50c</th>
+<th style="text-align: right;">Se_curvprof2m_fmean_5c</th>
+<th style="text-align: right;">Se_curvprof2m_s60</th>
+<th style="text-align: right;">Se_curvprof2m_s7</th>
+<th style="text-align: right;">Se_curvprof2m_std_50c</th>
+<th style="text-align: right;">Se_curvprof2m_std_5c</th>
+<th style="text-align: right;">Se_curvprof50m</th>
+<th style="text-align: right;">Se_diss2m_50c</th>
+<th style="text-align: right;">Se_diss2m_5c</th>
+<th style="text-align: right;">Se_e_aspect25m</th>
+<th style="text-align: right;">Se_e_aspect2m</th>
+<th style="text-align: right;">Se_e_aspect2m_5c</th>
+<th style="text-align: right;">Se_e_aspect50m</th>
+<th style="text-align: right;">Se_n_aspect2m</th>
+<th style="text-align: right;">Se_n_aspect2m_50c</th>
+<th style="text-align: right;">Se_n_aspect2m_5c</th>
+<th style="text-align: right;">Se_n_aspect50m</th>
+<th style="text-align: right;">Se_n_aspect6m</th>
+<th style="text-align: right;">Se_rough2m_10c</th>
+<th style="text-align: right;">Se_rough2m_5c</th>
+<th style="text-align: right;">Se_rough2m_rect3c</th>
+<th style="text-align: right;">Se_slope2m</th>
+<th style="text-align: right;">Se_slope2m_fmean_50c</th>
+<th style="text-align: right;">Se_slope2m_fmean_5c</th>
+<th style="text-align: right;">Se_slope2m_s60</th>
+<th style="text-align: right;">Se_slope2m_s7</th>
+<th style="text-align: right;">Se_slope2m_std_50c</th>
+<th style="text-align: right;">Se_slope2m_std_5c</th>
+<th style="text-align: right;">Se_slope50m</th>
+<th style="text-align: right;">Se_slope6m</th>
+<th style="text-align: right;">Se_toposcale2m_r3_r50_i10s</th>
+<th style="text-align: right;">Se_tpi_2m_50c</th>
+<th style="text-align: right;">Se_tpi_2m_5c</th>
+<th style="text-align: right;">Se_tri2m_altern_3c</th>
+<th style="text-align: right;">Se_tsc10_2m</th>
+<th style="text-align: right;">Se_vrm2m</th>
+<th style="text-align: right;">Se_vrm2m_r10c</th>
+<th style="text-align: right;">be_gwn25_hdist</th>
+<th style="text-align: right;">be_gwn25_vdist</th>
+<th style="text-align: right;">cindx10_25</th>
+<th style="text-align: right;">cindx50_25</th>
+<th style="text-align: right;">geo500h1id</th>
+<th style="text-align: right;">geo500h3id</th>
+<th style="text-align: right;">lgm</th>
+<th style="text-align: right;">lsf</th>
+<th style="text-align: right;">mrrtf25</th>
+<th style="text-align: right;">mrvbf25</th>
+<th style="text-align: right;">mt_gh_y</th>
+<th style="text-align: right;">mt_rr_y</th>
+<th style="text-align: right;">mt_td_y</th>
+<th style="text-align: right;">mt_tt_y</th>
+<th style="text-align: right;">mt_ttvar</th>
+<th style="text-align: right;">protindx</th>
+<th style="text-align: right;">terrTextur</th>
+<th style="text-align: right;">tsc25_18</th>
+<th style="text-align: right;">tsc25_40</th>
+<th style="text-align: right;">vdcn25</th>
+<th style="text-align: right;">vszone</th>
 </tr>
 </thead>
 <tbody>
@@ -821,21 +968,97 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <td style="text-align: right;">6.227780</td>
 <td style="text-align: right;">7.109235</td>
 <td style="text-align: right;">7.214589</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">-0.2402939</td>
-<td style="text-align: right;">9931.120</td>
-<td style="text-align: right;">0.6229440</td>
-<td style="text-align: right;">65.62196</td>
-<td style="text-align: right;">0.0770846</td>
-<td style="text-align: right;">-40.5395088</td>
-<td style="text-align: right;">1.1250136</td>
+<td style="text-align: right;">1.569110</td>
+<td style="text-align: right;">1.534734</td>
+<td style="text-align: right;">5.930607</td>
 <td style="text-align: right;">6.950892</td>
-<td style="text-align: right;">-0.0382753</td>
-<td style="text-align: right;">0.3934371</td>
-<td style="text-align: right;">0.0002450</td>
-<td style="text-align: right;">-1.0857303</td>
+<td style="text-align: right;">1.562085</td>
+<td style="text-align: right;">1.548762</td>
 <td style="text-align: right;">4.000910</td>
+<td style="text-align: right;">16.248077</td>
+<td style="text-align: right;">0.0011592</td>
+<td style="text-align: right;">0.0032796</td>
+<td style="text-align: right;">0.0049392</td>
+<td style="text-align: right;">0.3480562</td>
+<td style="text-align: right;">-40.5395088</td>
+<td style="text-align: right;">-0.0014441</td>
+<td style="text-align: right;">-1.9364884</td>
+<td style="text-align: right;">-0.0062570</td>
+<td style="text-align: right;">0.0175912</td>
+<td style="text-align: right;">0.0002296</td>
+<td style="text-align: right;">2.9204133</td>
+<td style="text-align: right;">1.1769447</td>
+<td style="text-align: right;">0.0031319</td>
 <td style="text-align: right;">-0.5886537</td>
+<td style="text-align: right;">-0.0042508</td>
+<td style="text-align: right;">-1.0857303</td>
+<td style="text-align: right;">-0.0445323</td>
+<td style="text-align: right;">-0.0481024</td>
+<td style="text-align: right;">-0.0504083</td>
+<td style="text-align: right;">-0.1655090</td>
+<td style="text-align: right;">1.5687343</td>
+<td style="text-align: right;">0.6229440</td>
+<td style="text-align: right;">0.0007920</td>
+<td style="text-align: right;">-0.0028067</td>
+<td style="text-align: right;">0.8507581</td>
+<td style="text-align: right;">-0.0382753</td>
+<td style="text-align: right;">-0.0656936</td>
+<td style="text-align: right;">-0.0506380</td>
+<td style="text-align: right;">-0.0732220</td>
+<td style="text-align: right;">1.6507173</td>
+<td style="text-align: right;">0.7082230</td>
+<td style="text-align: right;">-0.0023399</td>
+<td style="text-align: right;">0.3934371</td>
+<td style="text-align: right;">0.1770810</td>
+<td style="text-align: right;">-0.9702092</td>
+<td style="text-align: right;">-0.5661940</td>
+<td style="text-align: right;">-0.7929600</td>
+<td style="text-align: right;">-0.9939429</td>
+<td style="text-align: right;">-0.2402939</td>
+<td style="text-align: right;">-0.2840056</td>
+<td style="text-align: right;">-0.6084610</td>
+<td style="text-align: right;">-0.0577110</td>
+<td style="text-align: right;">-0.7661251</td>
+<td style="text-align: right;">0.3228087</td>
+<td style="text-align: right;">0.2241062</td>
+<td style="text-align: right;">0.2003846</td>
+<td style="text-align: right;">1.1250136</td>
+<td style="text-align: right;">0.9428899</td>
+<td style="text-align: right;">0.6683306</td>
+<td style="text-align: right;">0.9333237</td>
+<td style="text-align: right;">0.7310556</td>
+<td style="text-align: right;">0.8815832</td>
+<td style="text-align: right;">0.3113754</td>
+<td style="text-align: right;">0.3783818</td>
+<td style="text-align: right;">0.5250366</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-0.0940372</td>
+<td style="text-align: right;">-0.0583917</td>
+<td style="text-align: right;">10.319408</td>
+<td style="text-align: right;">0.4645128</td>
+<td style="text-align: right;">0.0002450</td>
+<td style="text-align: right;">0.000125</td>
+<td style="text-align: right;">234.39087</td>
+<td style="text-align: right;">1.2986320</td>
+<td style="text-align: right;">-10.62191</td>
+<td style="text-align: right;">-6.9658718</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.0770846</td>
+<td style="text-align: right;">0.0184651</td>
+<td style="text-align: right;">4.977099</td>
+<td style="text-align: right;">1316.922</td>
+<td style="text-align: right;">9931.120</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">98</td>
+<td style="text-align: right;">183</td>
+<td style="text-align: right;">0.0159717</td>
+<td style="text-align: right;">0.6248673</td>
+<td style="text-align: right;">0.3332805</td>
+<td style="text-align: right;">1.784737</td>
+<td style="text-align: right;">65.62196</td>
+<td style="text-align: right;">6</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">4_26-In-006</td>
@@ -851,21 +1074,97 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <td style="text-align: right;">6.947128</td>
 <td style="text-align: right;">7.203502</td>
 <td style="text-align: right;">7.700000</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">0.4917848</td>
-<td style="text-align: right;">9931.672</td>
-<td style="text-align: right;">2.2502327</td>
-<td style="text-align: right;">69.16074</td>
-<td style="text-align: right;">0.0860347</td>
-<td style="text-align: right;">19.0945148</td>
-<td style="text-align: right;">1.3587183</td>
+<td style="text-align: right;">1.568917</td>
+<td style="text-align: right;">1.533827</td>
+<td style="text-align: right;">5.984921</td>
 <td style="text-align: right;">6.984581</td>
-<td style="text-align: right;">-0.0522900</td>
-<td style="text-align: right;">0.4014700</td>
-<td style="text-align: right;">0.0005389</td>
-<td style="text-align: right;">-0.3522736</td>
+<td style="text-align: right;">1.543384</td>
+<td style="text-align: right;">1.558683</td>
 <td style="text-align: right;">4.001326</td>
+<td style="text-align: right;">3.357315</td>
+<td style="text-align: right;">0.0139006</td>
+<td style="text-align: right;">0.0070509</td>
+<td style="text-align: right;">0.0067992</td>
+<td style="text-align: right;">0.1484705</td>
+<td style="text-align: right;">19.0945148</td>
+<td style="text-align: right;">-0.0190294</td>
+<td style="text-align: right;">2.1377332</td>
+<td style="text-align: right;">0.0021045</td>
+<td style="text-align: right;">0.0221433</td>
+<td style="text-align: right;">0.0000390</td>
+<td style="text-align: right;">3.8783867</td>
+<td style="text-align: right;">4.3162045</td>
+<td style="text-align: right;">-0.0171786</td>
 <td style="text-align: right;">0.1278165</td>
+<td style="text-align: right;">-0.0119618</td>
+<td style="text-align: right;">-0.3522736</td>
+<td style="text-align: right;">-0.0501855</td>
+<td style="text-align: right;">-0.3270764</td>
+<td style="text-align: right;">-0.1004921</td>
+<td style="text-align: right;">-0.5133076</td>
+<td style="text-align: right;">2.0736780</td>
+<td style="text-align: right;">2.2502327</td>
+<td style="text-align: right;">-0.0073879</td>
+<td style="text-align: right;">0.0070676</td>
+<td style="text-align: right;">-2.4900069</td>
+<td style="text-align: right;">-0.0522900</td>
+<td style="text-align: right;">-0.3492197</td>
+<td style="text-align: right;">-0.1005311</td>
+<td style="text-align: right;">-0.4981292</td>
+<td style="text-align: right;">2.1899190</td>
+<td style="text-align: right;">2.4300070</td>
+<td style="text-align: right;">0.0097907</td>
+<td style="text-align: right;">0.4014700</td>
+<td style="text-align: right;">0.7360508</td>
+<td style="text-align: right;">0.5683194</td>
+<td style="text-align: right;">-0.3505180</td>
+<td style="text-align: right;">0.8753148</td>
+<td style="text-align: right;">0.3406741</td>
+<td style="text-align: right;">0.4917848</td>
+<td style="text-align: right;">-0.5732749</td>
+<td style="text-align: right;">0.4801802</td>
+<td style="text-align: right;">-0.4550385</td>
+<td style="text-align: right;">0.7722272</td>
+<td style="text-align: right;">0.2730940</td>
+<td style="text-align: right;">0.2489859</td>
+<td style="text-align: right;">0.2376962</td>
+<td style="text-align: right;">1.3587183</td>
+<td style="text-align: right;">1.0895698</td>
+<td style="text-align: right;">0.9857153</td>
+<td style="text-align: right;">1.0231543</td>
+<td style="text-align: right;">1.0398037</td>
+<td style="text-align: right;">1.0152543</td>
+<td style="text-align: right;">0.5357812</td>
+<td style="text-align: right;">0.0645478</td>
+<td style="text-align: right;">0.5793087</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-0.0014692</td>
+<td style="text-align: right;">0.0180000</td>
+<td style="text-align: right;">12.603136</td>
+<td style="text-align: right;">0.5536283</td>
+<td style="text-align: right;">0.0005389</td>
+<td style="text-align: right;">0.000300</td>
+<td style="text-align: right;">127.41681</td>
+<td style="text-align: right;">1.7064546</td>
+<td style="text-align: right;">-10.87862</td>
+<td style="text-align: right;">-11.8201790</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.0860347</td>
+<td style="text-align: right;">0.0544361</td>
+<td style="text-align: right;">4.975796</td>
+<td style="text-align: right;">1317.000</td>
+<td style="text-align: right;">9931.672</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">98</td>
+<td style="text-align: right;">183</td>
+<td style="text-align: right;">0.0204794</td>
+<td style="text-align: right;">0.7573612</td>
+<td style="text-align: right;">0.3395441</td>
+<td style="text-align: right;">1.832904</td>
+<td style="text-align: right;">69.16074</td>
+<td style="text-align: right;">6</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">4_26-In-012</td>
@@ -881,21 +1180,97 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <td style="text-align: right;">6.147128</td>
 <td style="text-align: right;">5.603502</td>
 <td style="text-align: right;">5.904355</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">-0.9633239</td>
-<td style="text-align: right;">9935.438</td>
-<td style="text-align: right;">0.2292406</td>
-<td style="text-align: right;">63.57096</td>
-<td style="text-align: right;">0.0737963</td>
-<td style="text-align: right;">-9.1396294</td>
-<td style="text-align: right;">0.7160403</td>
+<td style="text-align: right;">1.569093</td>
+<td style="text-align: right;">1.543057</td>
+<td style="text-align: right;">5.953919</td>
 <td style="text-align: right;">6.990917</td>
-<td style="text-align: right;">-0.0089129</td>
-<td style="text-align: right;">0.6717541</td>
-<td style="text-align: right;">0.0000124</td>
-<td style="text-align: right;">-0.2168447</td>
+<td style="text-align: right;">1.565405</td>
+<td style="text-align: right;">1.563151</td>
 <td style="text-align: right;">4.000320</td>
+<td style="text-align: right;">11.330072</td>
+<td style="text-align: right;">0.0011398</td>
+<td style="text-align: right;">0.0021498</td>
+<td style="text-align: right;">0.0017847</td>
+<td style="text-align: right;">0.1112066</td>
+<td style="text-align: right;">-9.1396294</td>
+<td style="text-align: right;">0.0039732</td>
+<td style="text-align: right;">-0.4178924</td>
+<td style="text-align: right;">0.0009509</td>
+<td style="text-align: right;">0.0431735</td>
+<td style="text-align: right;">0.0034232</td>
+<td style="text-align: right;">0.7022317</td>
+<td style="text-align: right;">0.4170935</td>
+<td style="text-align: right;">-0.0026431</td>
 <td style="text-align: right;">-0.0183221</td>
+<td style="text-align: right;">0.0015183</td>
+<td style="text-align: right;">-0.2168447</td>
+<td style="text-align: right;">-0.0079620</td>
+<td style="text-align: right;">0.0053904</td>
+<td style="text-align: right;">-0.0091239</td>
+<td style="text-align: right;">-0.0110896</td>
+<td style="text-align: right;">0.3974485</td>
+<td style="text-align: right;">0.2292406</td>
+<td style="text-align: right;">-0.0013561</td>
+<td style="text-align: right;">-0.0024548</td>
+<td style="text-align: right;">0.2010477</td>
+<td style="text-align: right;">-0.0089129</td>
+<td style="text-align: right;">-0.0377831</td>
+<td style="text-align: right;">-0.0125471</td>
+<td style="text-align: right;">-0.0052359</td>
+<td style="text-align: right;">0.4158890</td>
+<td style="text-align: right;">0.2700820</td>
+<td style="text-align: right;">0.0012870</td>
+<td style="text-align: right;">0.6717541</td>
+<td style="text-align: right;">0.4404107</td>
+<td style="text-align: right;">-0.6987815</td>
+<td style="text-align: right;">-0.1960597</td>
+<td style="text-align: right;">-0.3866692</td>
+<td style="text-align: right;">-0.7592779</td>
+<td style="text-align: right;">-0.9633239</td>
+<td style="text-align: right;">-0.3006475</td>
+<td style="text-align: right;">-0.9221049</td>
+<td style="text-align: right;">-0.3257418</td>
+<td style="text-align: right;">-0.9502072</td>
+<td style="text-align: right;">0.2305476</td>
+<td style="text-align: right;">0.2182523</td>
+<td style="text-align: right;">0.1434273</td>
+<td style="text-align: right;">0.7160403</td>
+<td style="text-align: right;">0.5758902</td>
+<td style="text-align: right;">0.5300468</td>
+<td style="text-align: right;">0.5107915</td>
+<td style="text-align: right;">0.5744110</td>
+<td style="text-align: right;">0.4975456</td>
+<td style="text-align: right;">0.2001768</td>
+<td style="text-align: right;">0.1311051</td>
+<td style="text-align: right;">0.4620202</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0340407</td>
+<td style="text-align: right;">-0.0145804</td>
+<td style="text-align: right;">7.100000</td>
+<td style="text-align: right;">0.4850160</td>
+<td style="text-align: right;">0.0000124</td>
+<td style="text-align: right;">0.000000</td>
+<td style="text-align: right;">143.41533</td>
+<td style="text-align: right;">0.9372618</td>
+<td style="text-align: right;">22.10210</td>
+<td style="text-align: right;">0.2093917</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.0737963</td>
+<td style="text-align: right;">3.6830916</td>
+<td style="text-align: right;">4.986864</td>
+<td style="text-align: right;">1315.134</td>
+<td style="text-align: right;">9935.438</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">98</td>
+<td style="text-align: right;">183</td>
+<td style="text-align: right;">0.0048880</td>
+<td style="text-align: right;">0.7978453</td>
+<td style="text-align: right;">0.4455501</td>
+<td style="text-align: right;">1.981526</td>
+<td style="text-align: right;">63.57096</td>
+<td style="text-align: right;">6</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">4_26-In-014</td>
@@ -911,21 +1286,97 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <td style="text-align: right;">6.754607</td>
 <td style="text-align: right;">7.200000</td>
 <td style="text-align: right;">7.151129</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">-0.4677161</td>
-<td style="text-align: right;">9939.923</td>
-<td style="text-align: right;">0.1029889</td>
-<td style="text-align: right;">64.60535</td>
-<td style="text-align: right;">0.0859686</td>
-<td style="text-align: right;">-0.9318936</td>
-<td style="text-align: right;">0.8482135</td>
+<td style="text-align: right;">1.569213</td>
+<td style="text-align: right;">1.542792</td>
+<td style="text-align: right;">4.856076</td>
 <td style="text-align: right;">6.964162</td>
-<td style="text-align: right;">-0.0331309</td>
-<td style="text-align: right;">0.4988544</td>
-<td style="text-align: right;">0.0000857</td>
-<td style="text-align: right;">-0.0272214</td>
+<td style="text-align: right;">1.562499</td>
+<td style="text-align: right;">1.562670</td>
 <td style="text-align: right;">4.000438</td>
+<td style="text-align: right;">42.167496</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0008454</td>
+<td style="text-align: right;">0.0021042</td>
+<td style="text-align: right;">0.3710849</td>
+<td style="text-align: right;">-0.9318936</td>
+<td style="text-align: right;">-0.0371234</td>
+<td style="text-align: right;">-0.0289909</td>
+<td style="text-align: right;">0.0029348</td>
+<td style="text-align: right;">-0.1056513</td>
+<td style="text-align: right;">0.0127788</td>
+<td style="text-align: right;">1.5150748</td>
+<td style="text-align: right;">0.2413423</td>
+<td style="text-align: right;">0.0020990</td>
 <td style="text-align: right;">-0.0706228</td>
+<td style="text-align: right;">-0.0113604</td>
+<td style="text-align: right;">-0.0272214</td>
+<td style="text-align: right;">-0.0301961</td>
+<td style="text-align: right;">-0.0346193</td>
+<td style="text-align: right;">-0.0273140</td>
+<td style="text-align: right;">-0.0343277</td>
+<td style="text-align: right;">0.8245047</td>
+<td style="text-align: right;">0.1029889</td>
+<td style="text-align: right;">-0.0041158</td>
+<td style="text-align: right;">0.0257630</td>
+<td style="text-align: right;">0.0017695</td>
+<td style="text-align: right;">-0.0331309</td>
+<td style="text-align: right;">0.0710320</td>
+<td style="text-align: right;">-0.0400928</td>
+<td style="text-align: right;">0.0529446</td>
+<td style="text-align: right;">0.8635767</td>
+<td style="text-align: right;">0.1616543</td>
+<td style="text-align: right;">-0.0062147</td>
+<td style="text-align: right;">0.4988544</td>
+<td style="text-align: right;">0.4217250</td>
+<td style="text-align: right;">-0.8485889</td>
+<td style="text-align: right;">-0.8836724</td>
+<td style="text-align: right;">-0.8657616</td>
+<td style="text-align: right;">-0.8993938</td>
+<td style="text-align: right;">-0.4677161</td>
+<td style="text-align: right;">-0.5735765</td>
+<td style="text-align: right;">-0.4998477</td>
+<td style="text-align: right;">-0.4121092</td>
+<td style="text-align: right;">-0.4782534</td>
+<td style="text-align: right;">0.3859352</td>
+<td style="text-align: right;">0.2732429</td>
+<td style="text-align: right;">0.1554769</td>
+<td style="text-align: right;">0.8482135</td>
+<td style="text-align: right;">0.8873205</td>
+<td style="text-align: right;">0.8635756</td>
+<td style="text-align: right;">0.9015982</td>
+<td style="text-align: right;">0.8518201</td>
+<td style="text-align: right;">0.5767300</td>
+<td style="text-align: right;">0.2149791</td>
+<td style="text-align: right;">0.3928713</td>
+<td style="text-align: right;">0.8432562</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.0686932</td>
+<td style="text-align: right;">-0.0085602</td>
+<td style="text-align: right;">8.303085</td>
+<td style="text-align: right;">0.3951114</td>
+<td style="text-align: right;">0.0000857</td>
+<td style="text-align: right;">0.000100</td>
+<td style="text-align: right;">165.80418</td>
+<td style="text-align: right;">0.7653937</td>
+<td style="text-align: right;">-20.11569</td>
+<td style="text-align: right;">-7.7729993</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.0859686</td>
+<td style="text-align: right;">0.0075817</td>
+<td style="text-align: right;">5.285522</td>
+<td style="text-align: right;">1315.160</td>
+<td style="text-align: right;">9939.923</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">98</td>
+<td style="text-align: right;">183</td>
+<td style="text-align: right;">0.0064054</td>
+<td style="text-align: right;">0.4829135</td>
+<td style="text-align: right;">0.4483251</td>
+<td style="text-align: right;">2.113142</td>
+<td style="text-align: right;">64.60535</td>
+<td style="text-align: right;">6</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">4_26-In-015</td>
@@ -941,21 +1392,97 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <td style="text-align: right;">6.272715</td>
 <td style="text-align: right;">6.718392</td>
 <td style="text-align: right;">7.269008</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">0.5919228</td>
-<td style="text-align: right;">9942.032</td>
-<td style="text-align: right;">0.9816071</td>
-<td style="text-align: right;">61.16533</td>
-<td style="text-align: right;">0.0650000</td>
-<td style="text-align: right;">4.2692256</td>
-<td style="text-align: right;">1.2301254</td>
+<td style="text-align: right;">1.570359</td>
+<td style="text-align: right;">1.541979</td>
+<td style="text-align: right;">4.130917</td>
 <td style="text-align: right;">6.945287</td>
-<td style="text-align: right;">-0.0202268</td>
-<td style="text-align: right;">0.6999696</td>
-<td style="text-align: right;">0.0002062</td>
-<td style="text-align: right;">0.2968794</td>
+<td style="text-align: right;">1.550528</td>
+<td style="text-align: right;">1.562685</td>
 <td style="text-align: right;">4.000948</td>
+<td style="text-align: right;">5.479310</td>
+<td style="text-align: right;">0.0054557</td>
+<td style="text-align: right;">0.0043268</td>
+<td style="text-align: right;">0.0045225</td>
+<td style="text-align: right;">0.3907509</td>
+<td style="text-align: right;">4.2692256</td>
+<td style="text-align: right;">0.0378648</td>
+<td style="text-align: right;">0.6409346</td>
+<td style="text-align: right;">0.0022611</td>
+<td style="text-align: right;">-0.1020419</td>
+<td style="text-align: right;">0.0161510</td>
+<td style="text-align: right;">3.6032522</td>
+<td style="text-align: right;">1.8169731</td>
+<td style="text-align: right;">0.0346340</td>
 <td style="text-align: right;">0.0476020</td>
+<td style="text-align: right;">0.0378154</td>
+<td style="text-align: right;">0.2968794</td>
+<td style="text-align: right;">-0.0179657</td>
+<td style="text-align: right;">-0.0137853</td>
+<td style="text-align: right;">-0.0146946</td>
+<td style="text-align: right;">0.0060875</td>
+<td style="text-align: right;">1.4667766</td>
+<td style="text-align: right;">0.9816071</td>
+<td style="text-align: right;">0.0337645</td>
+<td style="text-align: right;">-0.0000494</td>
+<td style="text-align: right;">-0.3440553</td>
+<td style="text-align: right;">-0.0202268</td>
+<td style="text-align: right;">0.0882566</td>
+<td style="text-align: right;">-0.0308456</td>
+<td style="text-align: right;">0.0929077</td>
+<td style="text-align: right;">2.6904552</td>
+<td style="text-align: right;">1.0218329</td>
+<td style="text-align: right;">-0.0008695</td>
+<td style="text-align: right;">0.6999696</td>
+<td style="text-align: right;">0.3944107</td>
+<td style="text-align: right;">-0.8918364</td>
+<td style="text-align: right;">-0.7795515</td>
+<td style="text-align: right;">-0.8864348</td>
+<td style="text-align: right;">-0.4249992</td>
+<td style="text-align: right;">0.5919228</td>
+<td style="text-align: right;">0.4304937</td>
+<td style="text-align: right;">0.4614536</td>
+<td style="text-align: right;">0.6559467</td>
+<td style="text-align: right;">0.4574654</td>
+<td style="text-align: right;">0.4330348</td>
+<td style="text-align: right;">0.3299487</td>
+<td style="text-align: right;">0.1889674</td>
+<td style="text-align: right;">1.2301254</td>
+<td style="text-align: right;">1.8937486</td>
+<td style="text-align: right;">1.2098556</td>
+<td style="text-align: right;">1.5986075</td>
+<td style="text-align: right;">1.2745584</td>
+<td style="text-align: right;">2.7759163</td>
+<td style="text-align: right;">0.5375320</td>
+<td style="text-align: right;">0.3582314</td>
+<td style="text-align: right;">1.1426100</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.3005829</td>
+<td style="text-align: right;">0.0061576</td>
+<td style="text-align: right;">10.110727</td>
+<td style="text-align: right;">0.5134069</td>
+<td style="text-align: right;">0.0002062</td>
+<td style="text-align: right;">0.000200</td>
+<td style="text-align: right;">61.39244</td>
+<td style="text-align: right;">1.0676192</td>
+<td style="text-align: right;">-55.12566</td>
+<td style="text-align: right;">-14.0670462</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.0650000</td>
+<td style="text-align: right;">0.0007469</td>
+<td style="text-align: right;">5.894688</td>
+<td style="text-align: right;">1315.056</td>
+<td style="text-align: right;">9942.032</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">98</td>
+<td style="text-align: right;">183</td>
+<td style="text-align: right;">0.0042235</td>
+<td style="text-align: right;">0.6290755</td>
+<td style="text-align: right;">0.3974232</td>
+<td style="text-align: right;">2.080674</td>
+<td style="text-align: right;">61.16533</td>
+<td style="text-align: right;">6</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">4_26-In-016</td>
@@ -971,41 +1498,102 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <td style="text-align: right;">6.160700</td>
 <td style="text-align: right;">5.559031</td>
 <td style="text-align: right;">5.161655</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">0.5820994</td>
-<td style="text-align: right;">9940.597</td>
-<td style="text-align: right;">0.3455668</td>
-<td style="text-align: right;">55.78354</td>
-<td style="text-align: right;">0.0731646</td>
-<td style="text-align: right;">-0.1732794</td>
-<td style="text-align: right;">1.0906221</td>
+<td style="text-align: right;">1.569434</td>
+<td style="text-align: right;">1.541606</td>
+<td style="text-align: right;">2.030315</td>
 <td style="text-align: right;">6.990967</td>
-<td style="text-align: right;">-0.0014042</td>
-<td style="text-align: right;">0.3157751</td>
-<td style="text-align: right;">0.0001151</td>
-<td style="text-align: right;">0.0100844</td>
+<td style="text-align: right;">1.563066</td>
+<td style="text-align: right;">1.552568</td>
 <td style="text-align: right;">4.000725</td>
+<td style="text-align: right;">13.499996</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0001476</td>
+<td style="text-align: right;">0.0003817</td>
+<td style="text-align: right;">0.1931891</td>
+<td style="text-align: right;">-0.1732794</td>
+<td style="text-align: right;">-0.1602274</td>
+<td style="text-align: right;">0.0318570</td>
+<td style="text-align: right;">-0.0035833</td>
+<td style="text-align: right;">-0.1282881</td>
+<td style="text-align: right;">0.0003549</td>
+<td style="text-align: right;">1.5897882</td>
+<td style="text-align: right;">0.8171870</td>
+<td style="text-align: right;">-0.0123340</td>
 <td style="text-align: right;">0.0400775</td>
+<td style="text-align: right;">-0.0813964</td>
+<td style="text-align: right;">0.0100844</td>
+<td style="text-align: right;">-0.0049875</td>
+<td style="text-align: right;">0.0320331</td>
+<td style="text-align: right;">-0.0049053</td>
+<td style="text-align: right;">0.0374298</td>
+<td style="text-align: right;">0.7912259</td>
+<td style="text-align: right;">0.3455668</td>
+<td style="text-align: right;">-0.0059622</td>
+<td style="text-align: right;">0.0788309</td>
+<td style="text-align: right;">-0.0217726</td>
+<td style="text-align: right;">-0.0014042</td>
+<td style="text-align: right;">0.1603212</td>
+<td style="text-align: right;">-0.0052602</td>
+<td style="text-align: right;">0.0867119</td>
+<td style="text-align: right;">1.0207798</td>
+<td style="text-align: right;">0.6147888</td>
+<td style="text-align: right;">0.0063718</td>
+<td style="text-align: right;">0.3157751</td>
+<td style="text-align: right;">0.5292308</td>
+<td style="text-align: right;">-0.8766075</td>
+<td style="text-align: right;">0.8129975</td>
+<td style="text-align: right;">0.5905659</td>
+<td style="text-align: right;">0.1640853</td>
+<td style="text-align: right;">0.5820994</td>
+<td style="text-align: right;">0.6325440</td>
+<td style="text-align: right;">0.8054439</td>
+<td style="text-align: right;">0.7448481</td>
+<td style="text-align: right;">0.6081498</td>
+<td style="text-align: right;">0.3688371</td>
+<td style="text-align: right;">0.2607146</td>
+<td style="text-align: right;">0.1763995</td>
+<td style="text-align: right;">1.0906221</td>
+<td style="text-align: right;">1.0418727</td>
+<td style="text-align: right;">0.8515157</td>
+<td style="text-align: right;">1.2106605</td>
+<td style="text-align: right;">0.8916541</td>
+<td style="text-align: right;">1.2163279</td>
+<td style="text-align: right;">0.4894866</td>
+<td style="text-align: right;">0.2049688</td>
+<td style="text-align: right;">0.7156029</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-0.0910767</td>
+<td style="text-align: right;">0.0034276</td>
+<td style="text-align: right;">9.574804</td>
+<td style="text-align: right;">0.3864355</td>
+<td style="text-align: right;">0.0001151</td>
+<td style="text-align: right;">0.000525</td>
+<td style="text-align: right;">310.05014</td>
+<td style="text-align: right;">0.1321367</td>
+<td style="text-align: right;">-17.16055</td>
+<td style="text-align: right;">-28.0693741</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.0731646</td>
+<td style="text-align: right;">0.0128017</td>
+<td style="text-align: right;">5.938320</td>
+<td style="text-align: right;">1315.000</td>
+<td style="text-align: right;">9940.597</td>
+<td style="text-align: right;">58</td>
+<td style="text-align: right;">98</td>
+<td style="text-align: right;">183</td>
+<td style="text-align: right;">0.0040683</td>
+<td style="text-align: right;">0.6997021</td>
+<td style="text-align: right;">0.4278295</td>
+<td style="text-align: right;">2.041467</td>
+<td style="text-align: right;">55.78354</td>
+<td style="text-align: right;">6</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<!--# # Spatial correlation -->
-<!--# As touched in @sec-intro, we should find a way to take spatial auto-correlation into account. Currently, our dataset holds spatial information in the x- and y-coordinates. The risk of including these coordinates is that a model learns the spatial features of our study area but not the generalisable underlying processes that drive soil development. For example, if our study area has a tendency to have a given soil type towards the north, a model may just learn this and predict a higher probability of that soil type with increasing y-coordinates. This tendency, however, may not be always true (for more, see @sec-exercise). -->
-<!--# Another consequence of just using x- and y-coordinates is that, when we use that model for prediction, the final map will most-likely look like a chess-board. Although it does not alleviate the issue of spatial autocorrelation, a quick fix to avoid a chess-board pattern is to add rotated coordinates to your dataset. That means that for every pixel, you rotate its x- and y-coordinates by a certain angle (see Figure @fig-rotcoord).[^02-data_preparation-1] This allows a Random Forest model to not just split across the orthogonal x- and y-coordinates but also along the rotated axes. Here, we are going to shift the coordinate system by 30° and 60° as follows: -->
-<!--# [^02-data_preparation-1]: For a detailed explanation, see Wikipedia article [on axes rotation](https://en.wikipedia.org/wiki/Rotation_of_axes_in_two_dimensions). -->
-<!--# ```{r} -->
-<!--# final_data <-  -->
-<!--#   cbind(bern_data, covar_data) |>  -->
-<!--#     dplyr::mutate( -->
-<!--#       x30 = x*cos(30/180*pi) - y*sin(30/180*pi), # 30/180*pi = 30° -->
-<!--#       y30 = x*sin(30/180*pi) + y*cos(30/180*pi), -->
-<!--#       x60 = x*cos(60/180*pi) - y*sin(60/180*pi), # 30/180*pi = 60° -->
-<!--#       y60 = x*sin(60/180*pi) + y*cos(60/180*pi) -->
-<!--#     ) -->
-<!--# ``` -->
-<!--# ![Visualisation of rotating x- and y-coordinates by 30° and 60°. Figure adapted from work by M. Nussbaum.](images/rotated_coords.png){#fig-rotcoord fig-align="center"} -->
 </section>
 <section id="more-data-wrangling" class="level2" data-number="2.4">
 <h2 data-number="2.4" class="anchored" data-anchor-id="more-data-wrangling"><span class="header-section-number">2.4</span> More data wrangling</h2>
@@ -1013,25 +1601,26 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <div class="cell">
 <details open="">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>cat_vars <span class="ot">&lt;-</span> </span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  covar_data <span class="sc">|&gt;</span> </span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Get number of distinct values per variable</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(dplyr<span class="sc">::</span><span class="fu">across</span>(dplyr<span class="sc">::</span><span class="fu">everything</span>(), <span class="sc">~</span> dplyr<span class="sc">::</span><span class="fu">n_distinct</span>(.))) <span class="sc">|&gt;</span> </span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Turn df into long format for easy filtering</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(dplyr<span class="sc">::</span><span class="fu">everything</span>(), </span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">"variable"</span>, </span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>                      <span class="at">values_to =</span> <span class="st">"n"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter out variables with 10 or less distinct values</span></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(n <span class="sc">&lt;=</span> <span class="dv">10</span>) <span class="sc">|&gt;</span></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extract the names of these variables</span></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">pull</span>(<span class="st">'variable'</span>)</span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Variables with less than 10 distinct values:"</span>, </span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ifelse</span>(<span class="fu">length</span>(cat_vars) <span class="sc">==</span> <span class="dv">0</span>, <span class="st">"none"</span>, cat_vars))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>vars_categorical <span class="ot">&lt;-</span> df_covars <span class="sc">|&gt;</span> </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Get number of distinct values per variable</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(dplyr<span class="sc">::</span><span class="fu">across</span>(dplyr<span class="sc">::</span><span class="fu">everything</span>(), <span class="sc">~</span>dplyr<span class="sc">::</span><span class="fu">n_distinct</span>(.))) <span class="sc">|&gt;</span> </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Turn df into long format for easy filtering</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">everything</span>(), </span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"variable"</span>, </span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"n"</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span> </span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Filter out variables with 10 or less distinct values</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(n <span class="sc">&lt;=</span> <span class="dv">10</span>) <span class="sc">|&gt;</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extract the names of these variables</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">pull</span>(<span class="st">'variable'</span>)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Variables with less than 10 distinct values:"</span>, </span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ifelse</span>(<span class="fu">length</span>(vars_categorical) <span class="sc">==</span> <span class="dv">0</span>, <span class="st">"none"</span>, vars_categorical))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Variables with less than 10 distinct values: geo500h1id</code></pre>
@@ -1041,9 +1630,8 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <div class="cell">
 <details open="">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>final_data <span class="ot">&lt;-</span> </span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  final_data <span class="sc">|&gt;</span> </span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(dplyr<span class="sc">::</span><span class="fu">across</span>(<span class="fu">all_of</span>(cat_vars), <span class="sc">~</span><span class="fu">as.factor</span>(.)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>df_full <span class="ot">&lt;-</span> df_full <span class="sc">|&gt;</span> </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(dplyr<span class="sc">::</span><span class="fu">across</span>(<span class="fu">all_of</span>(vars_categorical), <span class="sc">~</span><span class="fu">as.factor</span>(.)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 </section>
@@ -1054,10 +1642,10 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <details open="">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get number of rows to calculate percentages</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>n_rows <span class="ot">&lt;-</span> <span class="fu">nrow</span>(final_data)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>n_rows <span class="ot">&lt;-</span> <span class="fu">nrow</span>(df_full)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Get number of distinct values per variable</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>final_data <span class="sc">|&gt;</span> </span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>df_full <span class="sc">|&gt;</span> </span>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(dplyr<span class="sc">::</span><span class="fu">across</span>(dplyr<span class="sc">::</span><span class="fu">everything</span>(), </span>
 <span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>                                 <span class="sc">~</span> <span class="fu">length</span>(.) <span class="sc">-</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(.)))) <span class="sc">|&gt;</span> </span>
 <span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(dplyr<span class="sc">::</span><span class="fu">everything</span>(), </span>
@@ -1136,7 +1724,9 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <div class="cell">
 <details open="">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>final_data <span class="sc">|&gt;</span> visdat<span class="sc">::</span><span class="fu">vis_miss</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>df_full <span class="sc">|&gt;</span> </span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>) <span class="sc">|&gt;</span>   <span class="co"># reduce data for readability of the plot</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  visdat<span class="sc">::</span><span class="fu">vis_miss</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <p><img src="02-data_preparation_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
@@ -1150,8 +1740,8 @@ max values  :         99,           1, 15392.6,    467.5855, 324.2082, 152.3634,
 <details open="">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>))) <span class="fu">system</span>(<span class="fu">paste0</span>(<span class="st">"mkdir "</span>, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>)))</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(final_data, </span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data/bern_sampling_locations_with_covariates.rds"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(df_full, </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data/df_full.rds"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 
