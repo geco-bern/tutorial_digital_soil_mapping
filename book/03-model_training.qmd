@@ -1,56 +1,57 @@
 # Train a Random Forest {#sec-modelfit}
 
-In this chapter, we are going to use the data prepared in @sec-dataprep, train a Random Forest model, and evaluate the variable importance of the different predictors used in the model. To recap the basics of the Random Forest algorithm and its implementation and use in R, head over to [Chapter 11 of AGDS book](https://geco-bern.github.io/agds/randomforest.html).
+In this chapter, we are going to use the data prepared in @sec-dataprep, train a Random Forest model, and evaluate the variable importance of the different predictors_all used in the model. To recap the basics of the Random Forest algorithm and its implementation and use in R, head over to [Chapter 11 of AGDS book](https://geco-bern.github.io/agds/randomforest.html).
 
 ## Load data
 
 In the previous Chapter, we created a dataframe that holds information on the soil sampling locations and the covariates that we extracted for these positions. Let's load this datafarme into our environment
 
 ```{r}
-data_clean <- readRDS(here::here("data/bern_sampling_locations_with_covariates.rds"))
+df_full <- readRDS(here::here("data/df_full.rds"))
 
-head(data_clean) |> knitr::kable()
+head(df_full) |> 
+  knitr::kable()
 ```
 
 ## Preparations
 
-Before we can fit the model, we have to specify a few settings. First, we have to specify our response and predictor variables. Then, we have to split our dataset into a calibration and a validation set. Random Forest models cannot deal with `NA` values, so we have to remove these from our calibration set. 
+Before we can fit the model, we have to specify a few settings. First, we have to specify our target and predictor variables. Then, we have to split our dataset into a training and a testing set. Random Forest models cannot deal with `NA` values, so we have to remove these from our training set. 
 
 In the dataset we work with here, the data splitting into training and testing sets is defined by the column `dataset`. Usually, this is not the case and we split the data ourselves. Have a look at the [section in AGDS Book on data splitting](https://geco-bern.github.io/agds/supervisedmli.html#data-splitting).
 
-As predictors we use all the variables for which we have data with spatial coverage - the basis for spatial upscaling. We extracted these data in @sec-dataprep from geospatial files and the data frame was constructed by `cbind()`, where columns number 14-104 contain the covariates data, extracted from the geospatial files. See @sec-variables for a description of the variables. We use all of them here as predictors for the model.
+As predictors_all we use all the variables for which we have data with spatial coverage - the basis for spatial upscaling. We extracted these data in @sec-dataprep from geospatial files and the data frame was constructed by `cbind()`, where columns number 14-104 contain the covariates data, extracted from the geospatial files. See @sec-variables for a description of the variables. We use all of them here as predictors_all for the model.
 
 ```{r}
-# Specify response: The pH in the top 10cm
-response <- "ph.0.10"
+# Specify target: The pH in the top 10cm
+target <- "ph.0.10"
 
-# Specify predictors: Remove soil sampling information
-predictors <- names(data_clean)[14:ncol(data_clean)]
+# Specify predictors_all: Remove soil sampling and observational data
+predictors_all <- names(df_full)[14:ncol(df_full)]
 
-cat("The response is:", response,
-    "\nThe predictors are:", paste0(predictors[1:8], sep = ", "), "...")
+cat("The target is:", target,
+    "\nThe predictors_all are:", paste0(predictors_all[1:8], sep = ", "), "...")
 ```
 
 ```{r}
-# Split dataset into calibration and validation
-data_cal <- data_clean |> dplyr::filter(dataset == "calibration")
-data_val <- data_clean |> dplyr::filter(dataset == "validation")
+# Split dataset into training and testing sets
+df_train <- df_full |> dplyr::filter(dataset == "calibration")
+df_test  <- df_full |> dplyr::filter(dataset == "validation")
 
 # Filter out any NA to avoid error when running a Random Forest
-data_cal <- data_cal |> tidyr::drop_na()
-data_val <- data_val |> tidyr::drop_na()
+df_train <- df_train |> tidyr::drop_na()
+df_test <- df_test   |> tidyr::drop_na()
 
 # A little bit of verbose output:
-n_tot <- nrow(data_cal) + nrow(data_val)
+n_tot <- nrow(df_train) + nrow(df_test)
 
-perc_cal <- (nrow(data_cal) / n_tot) |> round(2) * 100
-perc_val <- (nrow(data_val) / n_tot) |> round(2) * 100
+perc_cal <- (nrow(df_train) / n_tot) |> round(2) * 100
+perc_val <- (nrow(df_test)  / n_tot) |> round(2) * 100
 
 cat("For model training, we have a calibration / validation split of: ",
     perc_cal, "/", perc_val, "%")
 ```
 
-Alright, this looks all good. We have our response and predictor variables saved for easy access later on and the 75/25% split of calibration and validation data looks good, too. We can now move on to model fitting.
+Alright, this looks all good. We have our target and predictor variables saved for easy access later on and the 75/25% split of calibration and validation data looks good, too. We can now move on to model fitting.
 
 ## Model training
 
@@ -63,11 +64,10 @@ Have a look at the values of the defaults by entering. `?ranger::ranger` in your
 ```{r}
 # ranger() crashes when using tibbles, so we are using the
 # base R notation to enter the data
-
 rf_basic <- ranger::ranger( 
-  y = data_cal[, response],   # Response variable
-  x = data_cal[, predictors], # Predictor variables
-  seed = 42,                  # Specify the seed for randomization to reproduce the same model again
+  y = df_train[, target],     # target variable
+  x = df_train[, predictors_all], # Predictor variables
+  seed = 42,                    # Specify the seed for randomization to reproduce the same model again
   num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training
 
 # Print a summary of fitted model
@@ -77,54 +77,12 @@ print(rf_basic)
 ::: callout-tip
 ## Predicting categories with Random Forests
 
-If our response variable was a categorical and not a continuous variable, we would have to set the argument `probability = TRUE`. The output would then be a probability map from 0-100%.
+If our target variable was a categorical and not a continuous variable, we would have to set the argument `probability = TRUE`. The output would then be a probability map from 0-100%.
 :::
 
 Although we only used the pre-defined parameters, we already get a fairly good out-of-bag (OOB) $R^2$ of 0.45 and a MSE of 0.32 pH units. See [here](https://geco-bern.github.io/agds/randomforest.html#out-of-bag-prediction) for more background on OOB error estimation with Random Forests.
 
-<!-- ### Model with weights -->
-
-<!-- Sometimes we know that a subset of our dataset is more trustworthy than the rest. For example, when you are using a gap-filling technique to interpolate data, that gap-filled data is less trustworthy than the actually measured data. Informing the model algorithm that it should weigh certain data entries more than others can affect the final model performance. -->
-
-<!-- In our dataset, we have information on whether the pH values were measured in the field - which is less precise - or in the lab. Also, two different lab methods are indicated in the data. All of this information is held in the suffix of the `timeset` variable, so let's assign weights according on the quality of the pH data as follows: `1` for CaCl$_2$ lab measurement (no suffix), `0.9` for pedotransfer from another lab method (suffix `_ptf`), and `0.7` for field data (suffix `_field`). For this, we create a weight-matching vector: -->
-
-<!-- ```{r} -->
-<!-- weights <-  -->
-<!--   data_cal |> -->
-<!--   dplyr::mutate( -->
-<!--     # Create a new variable 'weight' which holds only 1's -->
-<!--     w = 1, -->
-<!--     # Check the suffix in each row and if true, give a new weight. If false, keep the old weight. -->
-<!--     w = ifelse(stringr::str_detect(timeset, "_field"), 0.9, w), -->
-<!--     w = ifelse(stringr::str_detect(timeset, "_ptf"), 0.7, w) -->
-<!--   ) -->
-
-<!-- # Quality check if everything worked: -->
-<!-- set.seed(42) -->
-
-<!-- weights |>  -->
-<!--   dplyr::select(timeset, w) |>  -->
-<!--   dplyr::slice_sample(n = 8) |>   # Pick 8 random rows -->
-<!--   knitr::kable() -->
-<!-- ``` -->
-
-<!-- It is always a good idea to do quality checks when wrangling! Here we see that our weight attribution code worked as expected, so we can move on to model fitting. -->
-
-<!-- ```{r} -->
-<!-- rf_weighted <- ranger::ranger(  -->
-<!--   y = data_cal[, response],      # Response variable -->
-<!--   x = data_cal[, predictors],    # Predictor variables -->
-<!--   case.weights = weights[, "w"], # Add weights to input -->
-<!--   seed = 42,                     # Specify seed for randomization to reproduce the same model again -->
-<!--   num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training -->
-
-<!-- # Print a summary of fitted model -->
-<!-- rf_weighted |> print() -->
-<!-- ``` -->
-
-<!-- Not much has changed compared to our previous model. We see that the $R^2$ and MSE got negligibly worse but as a trade-off we gained more trust in our model. -->
-
-This is the step at which you may want to reduce the number of predictors to avoid collinearity and the risk of overfitting. You may also want to optimize the hyperparameters for improving the model performance and generalisability. Different hyperparameter specifications of the Random Forest model that control the model complexity may be compared. A simple way to do that is to use the {caret} R package which provides machine learning wrapper functions for hyperparameter tuning (among many more functionalities). Its use in combination with Random Forest is demonstrated in [Chapter 11 of AGDS book](https://geco-bern.github.io/agds/randomforest.html). Reducing the number of predictors and retaining only the most important ones is important for obtaining robust model generalisability and is approached by what is shown below.
+This is the step at which you may want to reduce the number of predictors_all to avoid collinearity and the risk of overfitting. You may also want to optimize the hyperparameters for improving the model performance and generalisability. Different hyperparameter specifications of the Random Forest model that control the model complexity may be compared. A simple way to do that is to use the {caret} R package which provides machine learning wrapper functions for hyperparameter tuning (among many more functionalities). Its use in combination with Random Forest is demonstrated in [Chapter 11 of AGDS book](https://geco-bern.github.io/agds/randomforest.html). Reducing the number of predictors_all and retaining only the most important ones is important for obtaining robust model generalisability and is approached by what is shown below.
 
 ## Variable importance
 
@@ -135,8 +93,8 @@ The model object returned by the `ranger()` function stores the variable importa
 ```{r fig.height=18}
 # Let's run the basic model again but with recording the variable importance
 rf_basic <- ranger::ranger( 
-  y = data_cal[, response],     # Response variable
-  x = data_cal[, predictors],   # Predictor variables
+  y = df_train[, target],     # target variable
+  x = df_train[, predictors_all],   # Predictor variables
   importance   = "permutation", # Pick permutation to calculate variable importance
   seed = 42,                    # Specify seed for randomization to reproduce the same model again
   num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training
@@ -175,23 +133,23 @@ We find that the mean annual precipitation is by far the most important variable
 
 ## Variable selection
 
-The large number of variables in our model and the tendency that many of them exhibit a low importance in comparison to the dominating few, and that they may be correlated calls for a *variable selection*. Reducing the number of predictors reduces the risk that remaining predictors are correlated. Having correlated predictors is a problem - as shown in the context of spatial upscaling by [@ludwig23]. Intuitively, this makes sense in view of the fact that if $x_i$ and $x_j$ are correlated, then, for example, $x_i$ is used for modelling its true association with the target variable, while $x_j$ can be "spent" to model randomly occurring covariations with the target - potentially modelling noise in the data. If this happens, overfitting will follow (see [here](https://geco-bern.github.io/agds/supervisedmli.html#overfitting)). 
+The large number of variables in our model and the tendency that many of them exhibit a low importance in comparison to the dominating few, and that they may be correlated calls for a *variable selection*. Reducing the number of predictors_all reduces the risk that remaining predictors_all are correlated. Having correlated predictors_all is a problem - as shown in the context of spatial upscaling by [@ludwig23]. Intuitively, this makes sense in view of the fact that if $x_i$ and $x_j$ are correlated, then, for example, $x_i$ is used for modelling its true association with the target variable, while $x_j$ can be "spent" to model randomly occurring covariations with the target - potentially modelling noise in the data. If this happens, overfitting will follow (see [here](https://geco-bern.github.io/agds/supervisedmli.html#overfitting)). 
 
-Different strategies for reducing the number of predictors, while retaining model performance and improving model generalisability, exist. *Greedy search*, or *stepwise regression* are often used. Their approach is to sequentially add (stepwise *forward*) or remove (stepwise *backward*) predictors and to determine the best (complemented or reduced) set of predictors in terms of respective model performance at each step. The algorithm stops once the model starts to deteriorate or stops improving. However, it should be noted that these algorithms don't assess all possible combinations of predictors and may thus not find the "globally" optimal model. A stepwise regression was implemented in AGDS I as a Report Exercise (see [here](https://geco-bern.github.io/agds/regressionclassification.html#report-exercise)). 
+Different strategies for reducing the number of predictors_all, while retaining model performance and improving model generalisability, exist. *Greedy search*, or *stepwise regression* are often used. Their approach is to sequentially add (stepwise *forward*) or remove (stepwise *backward*) predictors_all and to determine the best (complemented or reduced) set of predictors_all in terms of respective model performance at each step. The algorithm stops once the model starts to deteriorate or stops improving. However, it should be noted that these algorithms don't assess all possible combinations of predictors_all and may thus not find the "globally" optimal model. A stepwise regression was implemented in AGDS I as a Report Exercise (see [here](https://geco-bern.github.io/agds/regressionclassification.html#report-exercise)). 
 
 ::: callout-tip
 To dig deeper into understanding how the model works, we could further investigate its partial dependence plots (see [here](https://geco-bern.github.io/agds/interpretableml.html#partial-dependence-plots)).
 :::
 
-An alternative approach to model selection is to consider the variable importance. Predictors may be selected based on whether removing their association with the target variable (by permuting values of the predictor) deteriorates the model. Additionally, a decision criterion can be introduced for determining whether or not to retain the respective variable. This is implemented by the "Boruta-Algorithm" - an effective and popular approach to variable selection [@kursa10]. Boruta is available as an R package {Boruta}, is based on Random Forests, and performs a permutation of variables for determining their importance - as described in [Chapter 12 of AGDS Book](https://geco-bern.github.io/agds/interpretableml.html#variable-importance) for model-agnostic variable importance estimation. The algorithm finally categorizes variables into `"Rejected"`, `"Tentative"`, and `"Confirmed"`. Let's apply Boruta on our data.
+An alternative approach to model selection is to consider the variable importance. predictors_all may be selected based on whether removing their association with the target variable (by permuting values of the predictor) deteriorates the model. Additionally, a decision criterion can be introduced for determining whether or not to retain the respective variable. This is implemented by the "Boruta-Algorithm" - an effective and popular approach to variable selection [@kursa10]. Boruta is available as an R package {Boruta}, is based on Random Forests, and performs a permutation of variables for determining their importance - as described in [Chapter 12 of AGDS Book](https://geco-bern.github.io/agds/interpretableml.html#variable-importance) for model-agnostic variable importance estimation. The algorithm finally categorizes variables into `"Rejected"`, `"Tentative"`, and `"Confirmed"`. Let's apply Boruta on our data.
 
 ```{r fig.height=18}
 set.seed(42)
 
 # run the algorithm
 bor <- Boruta::Boruta(
-    y = data_cal[, response], 
-    x = data_cal[, predictors],
+    y = df_train[, target], 
+    x = df_train[, predictors_all],
     maxRuns = 50, # Number of iterations. Set to 30 or lower if it takes too long
     num.threads = parallel::detectCores()-1)
 
@@ -216,7 +174,7 @@ ggplot2::ggplot(ggplot2::aes(x = reorder(rowname, meanImp),
 ```
 
 ::: callout-tip
-Determine the length $N$ of the vector of predictors deemed important by (`"Confirmed"`) Boruta and compare these "important" variables with the $N$ most important variables of the OOB-based variable importance estimation demonstrated above.
+Determine the length $N$ of the vector of predictors_all deemed important by (`"Confirmed"`) Boruta and compare these "important" variables with the $N$ most important variables of the OOB-based variable importance estimation demonstrated above.
 :::
 
 <!-- ```{r} -->
@@ -241,34 +199,34 @@ For the spatial upscaling in the context of digital soil mapping, let's retain o
 
 ```{r}
 # get retained important variables
-predictors_bor <- df_bor |> 
+predictors_selected <- df_bor |> 
   dplyr::filter(decision == "Confirmed") |>
   dplyr::pull(rowname)
 
-length(predictors_bor)
+length(predictors_selected)
 
 # re-train Random Forest model
 rf_bor <- ranger::ranger( 
-  y = data_cal[, response],       # Response variable
-  x = data_cal[, predictors_bor], # Predictor variables
-  seed = 42,                      # Specify the seed for randomization to reproduce the same model again
+  y = df_train[, target],              # target variable
+  x = df_train[, predictors_selected], # Predictor variables
+  seed = 42,                           # Specify the seed for randomization to reproduce the same model again
   num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training
 ```
 
 ::: callout-tip
-Compare the skill of the models with all predictors and with the Boruta-informed reduced set of predictors. What is happening?
+Compare the skill of the models with all predictors_all and with the Boruta-informed reduced set of predictors_all. What is happening?
 :::
 
-Save the model object with the reduced set of predictors, calibration, and validation data for the subsequent Chapter.
+Save the model object with the reduced set of predictors_all, calibration, and validation data for the subsequent Chapter.
 
 ```{r}
 # Save relevant data for model testing in the next chapter.
 saveRDS(rf_bor,                   
         here::here("data/rf_for_ph0-10.rds"))
 
-saveRDS(data_cal[, c(response, predictors_bor)],
+saveRDS(df_train[, c(target, predictors_selected)],
         here::here("data/cal_for_ph0-10.rds"))
 
-saveRDS(data_val[, c(response, predictors_bor)],
+saveRDS(df_test[, c(target, predictors_selected)],
         here::here("data/val_for_ph0-10.rds"))
 ```
