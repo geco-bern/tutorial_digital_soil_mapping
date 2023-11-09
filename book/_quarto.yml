@@ -9,7 +9,7 @@ book:
     - name: "Pascal Schneider"
     - name: "Benjamin Stocker"
     - name: "Madlene Nussbaum"
-  date: "6/29/2023"
+  date: "09/11/2023"
   page-navigation: true
   chapters:
     - index.qmd

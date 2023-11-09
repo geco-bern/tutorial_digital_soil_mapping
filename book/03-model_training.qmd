@@ -211,6 +211,9 @@ rf_bor <- ranger::ranger(
   x = df_train[, predictors_selected], # Predictor variables
   seed = 42,                           # Specify the seed for randomization to reproduce the same model again
   num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training
+
+# quick report and performance of trained model object
+rf_bor
 ```
 
 ::: callout-tip
