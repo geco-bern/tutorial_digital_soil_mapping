@@ -7,7 +7,7 @@ bibliography: references.bib
 ::: callout-important
 ## Disclaimer
 
-This tutorial builds on the course [Applied Geodata Science I](https://geco-bern.github.io/agds_book/) and requires basic knowledge in using the tidyverse and Random Forests for data analysis.
+This tutorial builds on contents covered in *Applied Geodata Science*, chapters [Data Wrangling](https://geco-bern.github.io/agds_book/data_wrangling.html) and [Random Forest](https://geco-bern.github.io/agds_book/randomforest.html).
 :::
 
 ## A primer on spatial data science

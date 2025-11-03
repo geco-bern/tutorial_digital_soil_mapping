@@ -23,7 +23,7 @@
       "Package": "DBI",
       "Version": "1.2.3",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "methods"
@@ -213,7 +213,7 @@
       "Package": "classInt",
       "Version": "0.4-11",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "KernSmooth",
         "R",
@@ -272,7 +272,7 @@
       "Package": "data.table",
       "Version": "1.17.8",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "methods"
@@ -407,7 +407,7 @@
       "Package": "ggplot2",
       "Version": "4.0.0",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "S7",
@@ -687,7 +687,7 @@
       "Package": "purrr",
       "Version": "1.1.0",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "cli",
@@ -792,7 +792,7 @@
       "Package": "rprojroot",
       "Version": "2.1.1",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R"
       ],
@@ -802,7 +802,7 @@
       "Package": "s2",
       "Version": "1.1.9",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "Rcpp",
@@ -847,7 +847,7 @@
       "Package": "sf",
       "Version": "1.0-21",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "DBI",
         "R",
@@ -883,7 +883,7 @@
       "Package": "stringr",
       "Version": "1.5.2",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "cli",
@@ -900,7 +900,7 @@
       "Package": "terra",
       "Version": "1.8-70",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "Rcpp",
@@ -970,7 +970,7 @@
       "Package": "tidyterra",
       "Version": "0.7.2",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "cli",
@@ -1012,7 +1012,7 @@
       "Package": "units",
       "Version": "1.0-0",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R",
         "Rcpp"
@@ -1117,7 +1117,7 @@
       "Package": "wk",
       "Version": "0.9.4",
       "Source": "Repository",
-      "Repository": "CRAN",
+      "Repository": "RSPM",
       "Requirements": [
         "R"
       ],
