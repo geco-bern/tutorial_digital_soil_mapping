@@ -7,7 +7,7 @@ In this chapter, we are going to use the data prepared in @sec-dataprep, train a
 In the previous Chapter, we created a dataframe that holds information on the soil sampling locations and the covariates that we extracted for these positions. Let's load this datafarme into our environment
 
 ```{r}
-df_full <- readRDS(here::here("data/df_full.rds"))
+df_full <- readRDS(here::here("../data/df_full.rds"))
 
 head(df_full) |> 
   knitr::kable()
@@ -225,11 +225,11 @@ Save the model object with the reduced set of predictors_all, calibration, and v
 ```{r}
 # Save relevant data for model testing in the next chapter.
 saveRDS(rf_bor,                   
-        here::here("data/rf_for_ph0-10.rds"))
+        here::here("../data/rf_for_ph0-10.rds"))
 
 saveRDS(df_train[, c(target, predictors_selected)],
-        here::here("data/cal_for_ph0-10.rds"))
+        here::here("../data/cal_for_ph0-10.rds"))
 
 saveRDS(df_test[, c(target, predictors_selected)],
-        here::here("data/val_for_ph0-10.rds"))
+        here::here("../data/val_for_ph0-10.rds"))
 ```
