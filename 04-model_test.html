@@ -373,10 +373,10 @@ dimensions  : 986, 2428, 1  (nrow, ncol, nlyr)
 resolution  : 20, 20  (x, y)
 extent      : 2568140, 2616700, 1200740, 1220460  (xmin, xmax, ymin, ymax)
 coord. ref. : CH1903+ / LV95 
-source      : Se_curvplan2m_fmean_5c.tif 
-name        : Se_curvplan2m_fmean_5c 
-min value   :              -22.83849 
-max value   :               29.64258 </code></pre>
+source      : Se_curv2m_std_50c.tif 
+name        : Se_curv2m_std_50c 
+min value   :            0.0000 
+max value   :          213.5755 </code></pre>
 </div>
 <details open="">
 <summary>Code</summary>
@@ -388,10 +388,10 @@ dimensions  : 986, 2428, 1  (nrow, ncol, nlyr)
 resolution  : 20, 20  (x, y)
 extent      : 2568140, 2616700, 1200740, 1220460  (xmin, xmax, ymin, ymax)
 coord. ref. : CH1903+ / LV95 
-source      : Se_curvplan50m.tif 
-name        : Se_curvplan50m 
-min value   :      -3.427344 
-max value   :       3.426279 </code></pre>
+source      : Se_rough2m_rect3c.tif 
+name        : Se_rough2m_rect3c 
+min value   :          0.000000 
+max value   :          4.593187 </code></pre>
 </div>
 </div>
 <p>Load the rasters for the selected predictor variables into a raster object (a “stack” of multiple rasters).</p>
@@ -455,7 +455,7 @@ max value   :       3.426279 </code></pre>
 </section>
 <section id="model-metrics" class="level3" data-number="4.2.2">
 <h3 data-number="4.2.2" class="anchored" data-anchor-id="model-metrics"><span class="header-section-number">4.2.2</span> Model metrics</h3>
-<p>Now that we have our predictions ready, we can extract standard metrics for a regression problem (see <a href="https://geco-bern.github.io/agds/regressionclassification.html#regression">AGDS Chapter 8.2.2</a>).</p>
+<p>Now that we have our predictions ready, we can extract standard metrics for a classification problem (see <a href="https://geco-bern.github.io/agds/regressionclassification.html#regression">AGDS Chapter 8.2.2</a>).</p>
 <div class="cell">
 <details open="">
 <summary>Code</summary>
