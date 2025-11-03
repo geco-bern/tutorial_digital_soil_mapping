@@ -14,7 +14,7 @@ Let's load them
 ```{r}
 # Load soil data from sampling locations
 df_obs <- readr::read_csv(
-  here::here("data-raw/soildata/berne_soil_sampling_locations.csv")
+  here::here("../data-raw/soildata/berne_soil_sampling_locations.csv")
   )
 
 # Display data
@@ -47,7 +47,7 @@ Now, let's load the covariates that we want to produce our soil maps with. These
 ```{r}
 # Get a list with the path to all raster files
 list_raster <- list.files(
-  here::here("data-raw/geodata/covariates/"),
+  here::here("../data-raw/geodata/covariates/"),
   full.names = TRUE
   )
 
@@ -66,7 +66,7 @@ The output above shows the first five raster files with rather cryptic names. Th
 ```{r}
 # Load a raster file as example: Picking the slope profile at 2 m resolution
 raster_example <- terra::rast(
-  here::here("data-raw/geodata/covariates/Se_slope2m.tif")
+  here::here("../data-raw/geodata/covariates/Se_slope2m.tif")
   )
 raster_example
 ```

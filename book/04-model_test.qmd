@@ -5,9 +5,9 @@
 The trained model, calibration and validation data are loaded.
 ```{r}
 # Load random forest model
-rf_bor   <- readRDS(here::here("data/rf_for_pH0-10.rds"))
-df_train <- readRDS(here::here("data/cal_for_ph0-10.rds"))
-df_test  <- readRDS(here::here("data/val_for_ph0-10.rds"))
+rf_bor   <- readRDS(here::here("../data/rf_for_pH0-10.rds"))
+df_train <- readRDS(here::here("../data/cal_for_ph0-10.rds"))
+df_test  <- readRDS(here::here("../data/val_for_ph0-10.rds"))
 ```
 
 Next, we load a mask of the area over which the soil will be mapped.
@@ -15,7 +15,7 @@ Our target area to predict over is defined in the file `area_to_be_mapped.tif`. 
 
 ```{r}
 # Load area to be predicted
-raster_mask <- terra::rast(here::here("data-raw/geodata/study_area/area_to_be_mapped.tif"))
+raster_mask <- terra::rast(here::here("../data-raw/geodata/study_area/area_to_be_mapped.tif"))
 
 # Turn target raster into a dataframe, 1 px = 1 cell
 df_mask <- as.data.frame(raster_mask, xy = TRUE)
@@ -34,7 +34,7 @@ Next, we have to load the selected set of covariates as maps. These will be as t
 Get a list of all available covariate file names.
 ```{r}
 files_covariates <- list.files(
-  path = here::here("data-raw/geodata/covariates/"), 
+  path = here::here("../data-raw/geodata/covariates/"), 
   pattern = ".tif$",
   recursive = TRUE, 
   full.names = TRUE
@@ -102,7 +102,7 @@ df_test$pred <- prediction$predictions
 
 ### Model metrics
 
-Now that we have our predictions ready, we can extract standard metrics for a regression problem (see [AGDS Chapter 8.2.2](https://geco-bern.github.io/agds/regressionclassification.html#regression)).
+Now that we have our predictions ready, we can extract standard metrics for a regression problem (see [AGDS Chapter 8.2.2](https://geco-bern.github.io/agds_book/regression_classification.html#regression)).
 
 ```{r}
 # Calculate error
