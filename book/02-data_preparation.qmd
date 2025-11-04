@@ -8,6 +8,9 @@ library(ggplot2)
 library(terra)
 library(tidyterra)
 library(leaflet)
+library(sf)
+library(here)
+library(knitr)
 ```
 
 
@@ -25,7 +28,7 @@ Let's load them
 ```{r}
 # Load soil data from sampling locations
 df_obs <- readr::read_csv(
-  here::here("data-raw/soildata/berne_soil_sampling_locations.csv")
+  here("data-raw/soildata/berne_soil_sampling_locations.csv")
 )
 
 # Display data
@@ -58,12 +61,12 @@ Now, let's load the covariates that we want to produce our soil maps with. These
 ```{r}
 # Get a list with the path to all raster files
 list_raster <- list.files(
-  here::here("data-raw/geodata/covariates/"),
+  here("data-raw/geodata/covariates/"),
   full.names = TRUE
 )
 
 # Display file names
-purrr::map(
+map(
   list_raster,
   ~ basename(.)
 ) |>
@@ -74,13 +77,13 @@ The output above shows the first five raster files with rather cryptic names. Th
 
 ```{r}
 # Load a raster file as example: Picking the slope profile at 2 m resolution
-raster_example <- terra::rast(
-  here::here("data-raw/geodata/covariates/Se_slope2m.tif")
+raster_example <- rast(
+  here("data-raw/geodata/covariates/Se_slope2m.tif")
 )
 raster_example
 ```
 
-As shown in the output, a raster object has the following properties (among others, see `?terra::rast`):
+As shown in the output, a raster object has the following properties (among others, see `?rast`):
 
 -   class: The class of the file, here a SpatRaster.
 
@@ -117,17 +120,17 @@ To have more flexibility with visualising the data, we can use the `ggplot()` in
 
 ```{r}
 # To have some more flexibility, we can plot this in the ggplot-style as such:
-ggplot2::ggplot() +
+ggplot() +
   tidyterra::geom_spatraster(data = raster_example) +
-  ggplot2::scale_fill_viridis_c(
+  scale_fill_viridis_c(
     na.value = NA,
     option = "magma",
     name = "Slope (%) \n"
   ) +
-  ggplot2::theme_bw() +
-  ggplot2::scale_x_continuous(expand = c(0, 0)) + # avoid gap between plotting area and axis
-  ggplot2::scale_y_continuous(expand = c(0, 0)) +
-  ggplot2::labs(title = "Slope of the Study Area")
+  theme_bw() +
+  scale_x_continuous(expand = c(0, 0)) + # avoid gap between plotting area and axis
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(title = "Slope of the Study Area")
 ```
 
 ::: callout-note
@@ -150,7 +153,7 @@ This looks already interesting but we can put our data into a bit more context. 
 # Swiss CH1903+ / LV95: 2056
 
 # For the raster:
-rasta <- terra::project(raster_example, "+init=EPSG:4326")
+rasta <- project(raster_example, "+init=EPSG:4326")
 
 # Let's make a function for transforming the sampling locations:
 change_coords <- function(data, from_CRS, to_CRS) {
@@ -160,12 +163,12 @@ change_coords <- function(data, from_CRS, to_CRS) {
   }
 
   # Create simple feature for old CRS
-  sf_old_crs <- sf::st_as_sf(data, coords = c("lon", "lat"), crs = from_CRS)
+  sf_old_crs <- st_as_sf(data, coords = c("lon", "lat"), crs = from_CRS)
 
   # Transform to new CRS
-  sf_new_crs <- sf::st_transform(sf_old_crs, crs = to_CRS)
-  sf_new_crs$lat <- sf::st_coordinates(sf_new_crs)[, "Y"]
-  sf_new_crs$lon <- sf::st_coordinates(sf_new_crs)[, "X"]
+  sf_new_crs <- st_transform(sf_old_crs, crs = to_CRS)
+  sf_new_crs$lat <- st_coordinates(sf_new_crs)[, "Y"]
+  sf_new_crs$lon <- st_coordinates(sf_new_crs)[, "X"]
 
   sf_new_crs <- sf_new_crs |>
     as_tibble() |>
@@ -204,33 +207,33 @@ We now use the {leaflet} library for an interactive plot.
 # remotes::install_github('rstudio/leaflet')
 
 # Let's get a nice color palette now for easy reference
-pal <- leaflet::colorNumeric(
+pal <- colorNumeric(
   "magma",
-  terra::values(rasta),
+  values(rasta),
   na.color = "transparent"
 )
 
 # Next, we build a leaflet map
-leaflet::leaflet() |>
+leaflet() |>
   # As base maps, use two provided by ESRI
-  leaflet::addProviderTiles(leaflet::providers$Esri.WorldImagery, group = "World Imagery") |>
-  leaflet::addProviderTiles(leaflet::providers$Esri.WorldTopoMap, group = "World Topo") |>
+  addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") |>
+  addProviderTiles(providers$Esri.WorldTopoMap, group = "World Topo") |>
   # Add our raster file
-  leaflet::addRasterImage(
+  addRasterImage(
     rasta,
     colors = pal,
     opacity = 0.6,
     group = "raster"
   ) |>
   # Add markers for sampling locations
-  leaflet::addCircleMarkers(
+  addCircleMarkers(
     data = coord_train,
     lng = ~lon, # Column name for x coordinates
     lat = ~lat, # Column name for y coordinates
     group = "training",
     color = "black"
   ) |>
-  leaflet::addCircleMarkers(
+  addCircleMarkers(
     data = coord_test,
     lng = ~lon, # Column name for x coordinates
     lat = ~lat, # Column name for y coordinates
@@ -238,15 +241,15 @@ leaflet::leaflet() |>
     color = "red"
   ) |>
   # Add some layout and legend
-  leaflet::addLayersControl(
+  addLayersControl(
     baseGroups = c("World Imagery", "World Topo"),
     position = "topleft",
-    options = leaflet::layersControlOptions(collapsed = FALSE),
+    options = layersControlOptions(collapsed = FALSE),
     overlayGroups = c("raster", "training", "validation")
   ) |>
-  leaflet::addLegend(
+  addLegend(
     pal = pal,
-    values = terra::values(rasta),
+    values = values(rasta),
     title = "Slope (%)"
   )
 ```
@@ -265,12 +268,12 @@ Now that we have played with a few visualizations, let's get back to preparing o
 
 ```{r}
 # Load all files as one batch
-all_rasters <- terra::rast(list_raster)
+all_rasters <- rast(list_raster)
 all_rasters
 ```
 Note that above, we have stacked only a random of all available raster data (`list_raster`) which we have generated previously.
 
-Now, we do not want to have the covariates' data from all cells in the raster file. Rather, we want to reduce our stacked rasters to the x and y coordinates for which we have soil sampling data. We can do this using the `terra::extract()` function. Then, we want to merge the two dataframes of soil data and covariates data by their coordinates. Since number of rows and the order of the covariate data is the same as the "Bern data" (soil samples), we can simply bind their columns with `bind_rows()`:
+Now, we do not want to have the covariates' data from all cells in the raster file. Rather, we want to reduce our stacked rasters to the x and y coordinates for which we have soil sampling data. We can do this using the `terra::extract()` function from the {terra} package. Then, we want to merge the two dataframes of soil data and covariates data by their coordinates. Since number of rows and the order of the covariate data is the same as the "Bern data" (soil samples), we can simply bind their columns with `bind_rows()`:
 
 ```{r}
 # Extract coordinates from sampling locations
@@ -287,7 +290,7 @@ df_covars <- terra::extract(
 df_full <- cbind(df_obs, df_covars)
 
 head(df_full) |>
-  knitr::kable()
+  kable()
 ```
 
 ## More data wrangling
@@ -359,9 +362,9 @@ Alright, we see that we are not missing any data in the covariate data. Mostly s
 ## Save data
 
 ```{r}
-if (!dir.exists(here::here("data"))) system(paste0("mkdir ", here::here("data")))
+if (!dir.exists(here("data"))) system(paste0("mkdir ", here("data")))
 saveRDS(
   df_full,
-  here::here("data/df_full.rds")
+  here("data/df_full.rds")
 )
 ```
