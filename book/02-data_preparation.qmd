@@ -58,7 +58,7 @@ Now, let's load the covariates that we want to produce our soil maps with. These
 ```{r}
 # Get a list with the path to all raster files
 list_raster <- list.files(
-  here::here("../data-raw/geodata/covariates/"),
+  here::here("data-raw/geodata/covariates/"),
   full.names = TRUE
 )
 
@@ -169,7 +169,7 @@ change_coords <- function(data, from_CRS, to_CRS) {
 
   sf_new_crs <- sf_new_crs |>
     as_tibble() |>
-    select(id, lat, lon)
+    dplyr::select(id, lat, lon)
 
   # Return new CRS
   return(sf_new_crs)
@@ -178,7 +178,7 @@ change_coords <- function(data, from_CRS, to_CRS) {
 # Transform dataframes
 coord_train <- df_obs |>
   filter(dataset == "calibration") |>
-  select(site_id_unique, x, y) |>
+  dplyr::select(site_id_unique, x, y) |>
   rename(id = site_id_unique, lon = x, lat = y) |>
   change_coords(
     from_CRS = 2056,
@@ -187,13 +187,18 @@ coord_train <- df_obs |>
 
 coord_test <- df_obs |>
   filter(dataset == "validation") |>
-  select(site_id_unique, x, y) |>
+  dplyr::select(site_id_unique, x, y) |>
   rename(id = site_id_unique, lon = x, lat = y) |>
   change_coords(
     from_CRS = 2056,
     to_CRS = 4326
   )
+```
 
+We now use the {leaflet} library for an interactive plot.
+
+```{r}
+#| code-fold: true
 # Notes:
 # - This code may only work when installing the development branch of {leaflet}:
 # remotes::install_github('rstudio/leaflet')
@@ -269,18 +274,17 @@ Now, we do not want to have the covariates' data from all cells in the raster fi
 
 ```{r}
 # Extract coordinates from sampling locations
-sampling_xy <- df_obs |>
-  select(x, y)
+sampling_xy <- df_obs |> 
+  dplyr::select(x, y)
 
 # From all rasters, extract values for sampling coordinates
 df_covars <- terra::extract(
-  all_rasters, # The raster we want to extract from
-  sampling_xy, # A matrix of x and y values to extract for
-  ID = TRUE   # To not add a default ID column to the output
-) |> 
-  as_tibble()  # to have it in a nicely readable format
+  all_rasters,  # The raster we want to extract from
+  sampling_xy,  # A matrix of x and y values to extract for
+  ID = FALSE    # To not add a default ID column to the output
+  )
 
-df_full <- bind_rows(df_obs, df_covars)
+df_full <- cbind(df_obs, df_covars)
 
 head(df_full) |>
   knitr::kable()
@@ -346,7 +350,7 @@ This looks good, we have no variable with a substantial amount of missing data. 
 
 ```{r}
 df_full |>
-  select(1:20) |> # reduce data for readability of the plot
+  dplyr::select(1:20) |> # reduce data for readability of the plot
   visdat::vis_miss()
 ```
 
