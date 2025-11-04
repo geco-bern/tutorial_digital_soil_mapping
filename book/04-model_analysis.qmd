@@ -21,9 +21,9 @@ library(parallel)
 The trained model, calibration and validation data are loaded.
 ```{r}
 # Load random forest model
-rf_bor <- readRDS(here("data/rf_for_pH0-10.rds"))
-df_train <- readRDS(here("data/cal_for_ph0-10.rds"))
-df_test <- readRDS(here("data/val_for_ph0-10.rds"))
+rf_bor <- readRDS(here("../data/rf_for_pH0-10.rds"))
+df_train <- readRDS(here("../data/cal_for_ph0-10.rds"))
+df_test <- readRDS(here("../data/val_for_ph0-10.rds"))
 ```
 
 Next, we load a mask of the area over which the soil will be mapped.
@@ -31,7 +31,7 @@ Our target area to predict over is defined in the file `area_to_be_mapped.tif`. 
 
 ```{r}
 # Load area to be predicted
-raster_mask <- rast(here("data-raw/geodata/study_area/area_to_be_mapped.tif"))
+raster_mask <- rast(here("../data-raw/geodata/study_area/area_to_be_mapped.tif"))
 
 # Turn target raster into a dataframe, 1 px = 1 cell
 df_mask <- as.data.frame(raster_mask, xy = TRUE)
@@ -50,7 +50,7 @@ Next, we have to load the selected set of covariates as maps. These will be as t
 Get a list of all available covariate file names.
 ```{r}
 files_covariates <- list.files(
-  path = here("data-raw/geodata/covariates/"),
+  path = here("../data-raw/geodata/covariates/"),
   pattern = ".tif$",
   recursive = TRUE,
   full.names = TRUE
@@ -70,7 +70,7 @@ Load the rasters for the selected predictor variables into a raster object (a "s
 preds_selected <- names(rf_bor$forest$covariate.levels)
 
 list_raster <- list.files(
-  here("data-raw/geodata/covariates/"),
+  here("../data-raw/geodata/covariates/"),
   full.names = TRUE
 )
 
@@ -225,7 +225,7 @@ Let's write the predicted top soil pH raster into a GeoTIFF file.
 # Save raster as a GeoTIFF
 writeRaster(
   raster_pred,
-  here("data/ra_predicted_ph0-10.tif"),
+  here("../data/ra_predicted_ph0-10.tif"),
   datatype = "FLT4S", # FLT4S for floats, INT1U for integers (smaller file)
   filetype = "GTiff", # GeoTIFF format
   overwrite = TRUE # Overwrite existing file
