@@ -1,5 +1,16 @@
 # Train a Random Forest {#sec-modelfit}
 
+```{r}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(ggplot2)
+library(ranger)
+library(here)
+library(knitr)
+library(parallel)
+```
+
 In this chapter, we are going to use the data prepared in @sec-dataprep, train a Random Forest model, and evaluate the variable importance of the different predictors_all used in the model. To recap the basics of the Random Forest algorithm and its implementation and use in R, head over to [Chapter 11 of AGDS book](https://geco-bern.github.io/agds_book/randomforest.html).
 
 ## Load data
@@ -7,9 +18,9 @@ In this chapter, we are going to use the data prepared in @sec-dataprep, train a
 In the previous Chapter, we created a dataframe that holds information on the soil sampling locations and the covariates that we extracted for these positions. Let's load this datafarme into our environment
 
 ```{r}
-df_full <- readRDS(here::here("../data/df_full.rds"))
+df_full <- readRDS(here("data/df_full.rds"))
 
-head(df_full) |> 
+head(df_full) |>
   knitr::kable()
 ```
 
@@ -28,47 +39,58 @@ target <- "ph.0.10"
 # Specify predictors_all: Remove soil sampling and observational data
 predictors_all <- names(df_full)[14:ncol(df_full)]
 
-cat("The target is:", target,
-    "\nThe predictors_all are:", paste0(predictors_all[1:8], sep = ", "), "...")
+cat(
+  "The target is:", target,
+  "\nThe predictors_all are:", paste0(predictors_all[1:8], sep = ", "), "..."
+)
 ```
 
 ```{r}
 # Split dataset into training and testing sets
-df_train <- df_full |> dplyr::filter(dataset == "calibration")
-df_test  <- df_full |> dplyr::filter(dataset == "validation")
+df_train <- df_full |> 
+  filter(dataset == "calibration")
+
+df_test <- df_full |> 
+  filter(dataset == "validation")
 
 # Filter out any NA to avoid error when running a Random Forest
-df_train <- df_train |> tidyr::drop_na()
-df_test <- df_test   |> tidyr::drop_na()
+df_train <- df_train |> 
+  drop_na()
+
+df_test <- df_test |> 
+  drop_na()
 
 # A little bit of verbose output:
 n_tot <- nrow(df_train) + nrow(df_test)
 
 perc_cal <- (nrow(df_train) / n_tot) |> round(2) * 100
-perc_val <- (nrow(df_test)  / n_tot) |> round(2) * 100
+perc_val <- (nrow(df_test) / n_tot) |> round(2) * 100
 
-cat("For model training, we have a calibration / validation split of: ",
-    perc_cal, "/", perc_val, "%")
+cat(
+  "For model training, we have a calibration / validation split of: ",
+  perc_cal, "/", perc_val, "%"
+)
 ```
 
 Alright, this looks all good. We have our target and predictor variables saved for easy access later on and the 75/25% split of calibration and validation data looks good, too. We can now move on to model fitting.
 
 ## Model training
 
-The modelling task is to predict the soil pH in the top 10 cm. Let's start using the default hyperparameters used by `ranger::ranger()`.
+The modelling task is to predict the soil pH in the top 10 cm. Let's start using the default hyperparameters used by `ranger()`.
 
 ::: callout-tip
-Have a look at the values of the defaults by entering. `?ranger::ranger` in your console and study the function documentation. 
+Have a look at the values of the defaults by entering. `?ranger` in your console and study the function documentation. 
 :::
 
 ```{r}
 # ranger() crashes when using tibbles, so we are using the
 # base R notation to enter the data
-rf_basic <- ranger::ranger( 
+rf_basic <- ranger(
   y = df_train[, target],     # target variable
   x = df_train[, predictors_all], # Predictor variables
-  seed = 42,                    # Specify the seed for randomization to reproduce the same model again
-  num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training
+  seed = 42, # Specify the seed for randomization to reproduce the same model again
+  num.threads = parallel::detectCores() - 1
+) # Use all but one CPU core for quick model training
 
 # Print a summary of fitted model
 print(rf_basic)
@@ -86,34 +108,36 @@ This is the step at which you may want to reduce the number of predictors_all to
 
 ## Variable importance
 
-Our model has 91 variables, but we don't know anything about their role in influencing the model predictions and how important they are for achieving good predictions. `ranger::ranger()` provides a built-in functionality for quantifying  variable importance based on the OOB-error. This functionality can be controlled with the argument `importance`. When set to `'permutation'`, the algorithm randomly permutes values of each variable, one at a time, and measures the importance as the resulting decrease in the OOB prediction skill of each decision tree within the Random Forest and returns the average across importances of all decision trees. Note that this is a model-specific variable importance quantification method. In [AGDS Book Chapter 12](https://geco-bern.github.io/agds_book/interpretable-ml.html#variable-importance), you have learned about a model model-agnostic method.
+Our model has 91 variables, but we don't know anything about their role in influencing the model predictions and how important they are for achieving good predictions. `ranger()` provides a built-in functionality for quantifying  variable importance based on the OOB-error. This functionality can be controlled with the argument `importance`. When set to `'permutation'`, the algorithm randomly permutes values of each variable, one at a time, and measures the importance as the resulting decrease in the OOB prediction skill of each decision tree within the Random Forest and returns the average across importances of all decision trees. Note that this is a model-specific variable importance quantification method. In [AGDS Book Chapter 12](https://geco-bern.github.io/agds_book/interpretable-ml.html#variable-importance), you have learned about a model model-agnostic method.
 
 The model object returned by the `ranger()` function stores the variable importance information. The code below accesses this information and sorts the predictor variables with decreasing importance. If the code runs slow, you can also use the faster `impurity` method (see more information [here](https://bmcbioinformatics.biomedcentral.com/counter/pdf/10.1186/s12859-016-0995-8.pdf)).
 
 ```{r fig.height=18}
 # Let's run the basic model again but with recording the variable importance
-rf_basic <- ranger::ranger( 
+rf_basic <- ranger(
   y = df_train[, target],     # target variable
-  x = df_train[, predictors_all],   # Predictor variables
-  importance   = "permutation", # Pick permutation to calculate variable importance
-  seed = 42,                    # Specify seed for randomization to reproduce the same model again
-  num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training
+  x = df_train[, predictors_all], # Predictor variables
+  importance = "permutation", # Pick permutation to calculate variable importance
+  seed = 42, # Specify seed for randomization to reproduce the same model again
+  num.threads = parallel::detectCores() - 1
+) # Use all but one CPU core for quick model training
 
 # Extract the variable importance and create a long tibble
 vi_rf_basic <- rf_basic$variable.importance |>
-  dplyr::bind_rows() |> 
-  tidyr::pivot_longer(cols = dplyr::everything(), names_to = "variable")
+  bind_rows() |>
+  pivot_longer(cols = everything(), names_to = "variable")
 
 # Plot variable importance, ordered by decreasing value
-gg <- vi_rf_basic |> 
-  ggplot2::ggplot(ggplot2::aes(x = reorder(variable, value), y = value)) +
-  ggplot2::geom_bar(stat = "identity", fill = "grey50", width = 0.75) + 
-  ggplot2::labs(
-    y = "Change in OOB MSE after permutation", 
+gg <- vi_rf_basic |>
+  ggplot(aes(x = reorder(variable, value), y = value)) +
+  geom_bar(stat = "identity", fill = "grey50", width = 0.75) +
+  labs(
+    y = "Change in OOB MSE after permutation",
     x = "",
-    title = "Variable importance based on OOB") +
-  ggplot2::theme_classic() +
-  ggplot2::coord_flip()
+    title = "Variable importance based on OOB"
+  ) +
+  theme_classic() +
+  coord_flip()
 
 # Display plot
 gg
@@ -148,29 +172,35 @@ set.seed(42)
 
 # run the algorithm
 bor <- Boruta::Boruta(
-    y = df_train[, target], 
-    x = df_train[, predictors_all],
-    maxRuns = 50, # Number of iterations. Set to 30 or lower if it takes too long
-    num.threads = parallel::detectCores()-1)
+  y = df_train[, target],
+  x = df_train[, predictors_all],
+  maxRuns = 50, # Number of iterations. Set to 30 or lower if it takes too long
+  num.threads = parallel::detectCores() - 1
+)
 
 # obtain results: a data frame with all variables, ordered by their importance
-df_bor <- Boruta::attStats(bor) |> 
-  tibble::rownames_to_column() |> 
-  dplyr::arrange(dplyr::desc(meanImp))
+df_bor <- Boruta::attStats(bor) |>
+  tibble::rownames_to_column() |>
+  arrange(desc(meanImp))
 
-# plot the importance result  
-ggplot2::ggplot(ggplot2::aes(x = reorder(rowname, meanImp), 
-                             y = meanImp,
-                             fill = decision), 
-                data = df_bor) +
-  ggplot2::geom_bar(stat = "identity", width = 0.75) + 
-  ggplot2::scale_fill_manual(values = c("grey30", "tomato", "grey70")) + 
-  ggplot2::labs(
-    y = "Variable importance", 
+# plot the importance result
+ggplot(
+  aes(
+    x = reorder(rowname, meanImp),
+    y = meanImp,
+    fill = decision
+  ),
+  data = df_bor
+) +
+  geom_bar(stat = "identity", width = 0.75) +
+  scale_fill_manual(values = c("grey30", "tomato", "grey70")) +
+  labs(
+    y = "Variable importance",
     x = "",
-    title = "Variable importance based on Boruta") +
-  ggplot2::theme_classic() +
-  ggplot2::coord_flip()
+    title = "Variable importance based on Boruta"
+  ) +
+  theme_classic() +
+  coord_flip()
 ```
 
 ::: callout-tip
@@ -182,14 +212,14 @@ Determine the length $N$ of the vector of predictors_all deemed important by (`"
 <!-- # important variables from the weighted Random Forest model -->
 <!-- bor_top10 <- Boruta::attStats(bor) |>  -->
 <!--   tibble::rownames_to_column() |>  -->
-<!--   dplyr::arrange(dplyr::desc(meanImp)) |>  -->
-<!--   dplyr::slice_head(n = 10) |>  -->
-<!--   dplyr::pull(rowname) -->
+<!--   arrange(desc(meanImp)) |>  -->
+<!--   slice_head(n = 10) |>  -->
+<!--   pull(rowname) -->
 
 <!-- vi_top10 <- vi_rf_basic |> -->
-<!--   dplyr::arrange(dplyr::desc(value)) |>  -->
-<!--   dplyr::slice_head(n = 10) |>  -->
-<!--   dplyr::pull(variable) -->
+<!--   arrange(desc(value)) |>  -->
+<!--   slice_head(n = 10) |>  -->
+<!--   pull(variable) -->
 
 <!-- cbind(vi_top10, bor_top10) |>  -->
 <!--   knitr::kable(col.names = c("RF Top 10", "Boruta Top 10")) -->
@@ -199,18 +229,19 @@ For the spatial upscaling in the context of digital soil mapping, let's retain o
 
 ```{r}
 # get retained important variables
-predictors_selected <- df_bor |> 
-  dplyr::filter(decision == "Confirmed") |>
-  dplyr::pull(rowname)
+predictors_selected <- df_bor |>
+  filter(decision == "Confirmed") |>
+  pull(rowname)
 
 length(predictors_selected)
 
 # re-train Random Forest model
-rf_bor <- ranger::ranger( 
-  y = df_train[, target],              # target variable
+rf_bor <- ranger(
+  y = df_train[, target], # target variable
   x = df_train[, predictors_selected], # Predictor variables
-  seed = 42,                           # Specify the seed for randomization to reproduce the same model again
-  num.threads = parallel::detectCores() - 1) # Use all but one CPU core for quick model training
+  seed = 42, # Specify the seed for randomization to reproduce the same model again
+  num.threads = parallel::detectCores() - 1
+) # Use all but one CPU core for quick model training
 
 # quick report and performance of trained model object
 rf_bor
@@ -224,12 +255,18 @@ Save the model object with the reduced set of predictors_all, calibration, and v
 
 ```{r}
 # Save relevant data for model testing in the next chapter.
-saveRDS(rf_bor,                   
-        here::here("../data/rf_for_ph0-10.rds"))
+saveRDS(
+  rf_bor,
+  here("data/rf_for_ph0-10.rds")
+)
 
-saveRDS(df_train[, c(target, predictors_selected)],
-        here::here("../data/cal_for_ph0-10.rds"))
+saveRDS(
+  df_train[, c(target, predictors_selected)],
+  here("data/cal_for_ph0-10.rds")
+)
 
-saveRDS(df_test[, c(target, predictors_selected)],
-        here::here("../data/val_for_ph0-10.rds"))
+saveRDS(
+  df_test[, c(target, predictors_selected)],
+  here("data/val_for_ph0-10.rds")
+)
 ```
