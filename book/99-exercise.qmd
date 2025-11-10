@@ -8,7 +8,7 @@ Re-implement the digital soil mapping workflow, using Random Forest, as demonstr
 
 - Make sure that the categorical target variable is encoded as a factor using the function `factor()`.
 - Start with a model that includes all predictors, trained on the pre-defined training subset.
-- Evaluate the model on the testing subset of the data. Consider appropriate metrics as described in [AGDS Book Chapter 8.3](https://geco-bern.github.io/agds_book/regression_classification.html#extra-material). Is the data balanced in terms of observed `TRUE` and `FALSE` values? What does this imply for the interpretation of the different metrics?
+- Evaluate the model on the testing subset of the data. Consider appropriate metrics as described in [AGDS Book 9.4.1.2](https://geco-bern.github.io/agds_book/regression_classification.html#metrics-for-classification). Is the data balanced in terms of observed `TRUE` and `FALSE` values? What does this imply for the interpretation of the different metrics?
 
 ## Variable selection
 
