@@ -28,7 +28,7 @@ Let's load them
 ```{r}
 # Load soil data from sampling locations
 df_obs <- readr::read_csv(
-  here("../data-raw/soildata/berne_soil_sampling_locations.csv")
+  here("data-raw/soildata/berne_soil_sampling_locations.csv")
 )
 
 # Display data
@@ -61,7 +61,7 @@ Now, let's load the covariates that we want to produce our soil maps with. These
 ```{r}
 # Get a list with the path to all raster files
 list_raster <- list.files(
-  here("../data-raw/geodata/covariates/"),
+  here("data-raw/geodata/covariates/"),
   full.names = TRUE
 )
 
@@ -78,7 +78,7 @@ The output above shows the first five raster files with rather cryptic names. Th
 ```{r}
 # Load a raster file as example: Picking the slope profile at 2 m resolution
 raster_example <- rast(
-  here("../data-raw/geodata/covariates/Se_slope2m.tif")
+  here("data-raw/geodata/covariates/Se_slope2m.tif")
 )
 raster_example
 ```
@@ -386,9 +386,9 @@ Alright, we see that we are not missing any data in the covariate data. Mostly s
 ## Save data
 
 ```{r}
-if (!dir.exists(here("../data"))) system(paste0("mkdir ", here("../data")))
+if (!dir.exists(here("data/"))) system(paste0("mkdir ", here("data/")))
 saveRDS(
   df_full,
-  here("../data/df_full.rds")
+  here("data/df_full.rds")
 )
 ```
