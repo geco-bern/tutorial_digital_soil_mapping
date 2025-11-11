@@ -198,7 +198,7 @@ library(terra)
 # Let's get a nice color palette now for easy reference
 pal <- leaflet::colorNumeric(
   "magma",
-  terra::values(r),
+  terra::values(rasta),
   na.color = "transparent"
   )
 
@@ -238,7 +238,7 @@ leaflet::leaflet() |>
     ) |>
   leaflet::addLegend(
     pal = pal,
-    values = terra::values(r),
+    values = terra::values(rasta),
     title = "Slope (%)")
 ```
 
