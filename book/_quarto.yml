@@ -16,7 +16,7 @@ book:
     - 01-introduction.qmd
     - 02-data_preparation.qmd
     - 03-model_training.qmd
-    - 04-model_test.qmd
+    - 04-model_analysis.qmd
     - 99-exercise.qmd
     - 99-variables.qmd
     - references.qmd
